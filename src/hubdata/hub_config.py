@@ -1,3 +1,9 @@
+"""This module contains a Python interface to Hubverse configuration files.
+
+For more information about these files, see the Hubverse documentation:
+https://hubverse.io/en/latest/user-guide/hub-structure.html
+"""
+
 import json
 from pathlib import Path
 
@@ -9,7 +15,6 @@ class HubConfig:
     ----------
     hub_dir : pathlib.Path
         Path to a hub's root directory.
-        (see `Hubverse documentation <https://hubverse.io/en/latest/user-guide/hub-structure.html>`_)
     tasks : dict
         The hub's `tasks.json` contents
     model_metadata_schema : dict
@@ -23,7 +28,6 @@ class HubConfig:
         ----------
         param hub_dir : pathlib.Path
             Path to a hub's root directory.
-            (see `Hubverse documentation <https://hubverse.io/en/latest/user-guide/hub-structure.html>`_)
         """
 
         self.hub_dir = hub_dir
