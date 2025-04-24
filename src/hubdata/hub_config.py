@@ -3,19 +3,27 @@ from pathlib import Path
 
 
 class HubConfig:
-    """
-    Provides convenient access to various parts of a hub's `tasks.json` file.
+    """Provides convenient access to various parts of a hub's `tasks.json` file.
 
-    Instance variables:
-    - hub_dir: Path to a hub's root directory. see: https://hubverse.io/en/latest/user-guide/hub-structure.html
-    - tasks: the hub's `tasks.json` contents
-    - model_metadata_schema: the hub's `model-metadata-schema.json` contents
+    Attributes
+    ----------
+    hub_dir : Path
+        Path to a hub's root directory.
+        (see `Hubverse documentation <https://hubverse.io/en/latest/user-guide/hub-structure.html>`_)
+    tasks : dict
+        The hub's `tasks.json` contents
+    model_metadata_schema : dict
+        The hub's `model-metadata-schema.json` contents
     """
-
 
     def __init__(self, hub_dir: Path):
-        """
-        :param hub_dir: Path to a hub's root directory. see: https://hubverse.io/en/latest/user-guide/hub-structure.html
+        """Initialize the HubConfig object.
+
+        Parameters
+        ----------
+        param hub_dir : Path
+            Path to a hub's root directory.
+            (see `Hubverse documentation <https://hubverse.io/en/latest/user-guide/hub-structure.html>`_)
         """
 
         self.hub_dir = hub_dir
