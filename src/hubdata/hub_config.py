@@ -7,7 +7,7 @@ class HubConfig:
 
     Attributes
     ----------
-    hub_dir : Path
+    hub_dir : pathlib.Path
         Path to a hub's root directory.
         (see `Hubverse documentation <https://hubverse.io/en/latest/user-guide/hub-structure.html>`_)
     tasks : dict
@@ -21,7 +21,7 @@ class HubConfig:
 
         Parameters
         ----------
-        param hub_dir : Path
+        param hub_dir : pathlib.Path
             Path to a hub's root directory.
             (see `Hubverse documentation <https://hubverse.io/en/latest/user-guide/hub-structure.html>`_)
         """

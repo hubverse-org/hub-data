@@ -115,6 +115,10 @@ html_theme_options = {
     'pre_bg': '#433e56',
 }
 
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
+}
+
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
 
