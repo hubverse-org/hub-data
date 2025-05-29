@@ -5,8 +5,8 @@ from datetime import date
 import pyarrow as pa
 
 
-def create_hub_schema(tasks: dict, output_type_id_datatype: str | None = 'from_config',
-                      partitions: tuple[tuple[str, pa.DataType]] | None = (('model_id', pa.string()),)) -> object:
+def create_hub_schema(tasks: dict, output_type_id_datatype: str = 'from_config',
+                      partitions: tuple[tuple[str, pa.DataType]] | None = (('model_id', pa.string()),)) -> pa.schema:
     """
     Top-level function for creating a schema for the passed `HubConfig`.
 
@@ -61,7 +61,7 @@ def create_hub_schema(tasks: dict, output_type_id_datatype: str | None = 'from_c
     return pa.schema(col_name_to_pa_type)
 
 
-def _columns_for_model_task(model_task: dict, partitions: tuple[tuple[str, pa.DataType]]) \
+def _columns_for_model_task(model_task: dict, partitions: tuple[tuple[str, pa.DataType]] | None) \
         -> list[tuple[str, pa.DataType]]:
     # columns is a list of two-tuples: model_task key (column name) and inferred pa.DataType for it. the list possibly
     # contains duplicates when there are multiple rounds and/or model_tasks

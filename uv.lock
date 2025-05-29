@@ -246,6 +246,7 @@ wheels = [
 name = "hubdata"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "pyarrow" },
     { name = "rich" },
     { name = "structlog" },
@@ -269,6 +270,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.1.8" },
     { name = "pyarrow", specifier = ">=19.0.1" },
     { name = "rich" },
     { name = "structlog" },
