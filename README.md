@@ -67,6 +67,8 @@ print(pa_table.shape)
 # (1350, 2)
 ```
 
+## `HubConnection.to_table()` helper function
+
 If you just want the pyarrow Table and don't need the pyarrow Dataset returned by `HubConnection.get_dataset()` then you can use the `HubConnection.to_table()` helper function, which calls `HubConnection.get_dataset()` for you and then passes its args through to `Dataset.to_table()`. So the above example in full would be:
 
 ```python
@@ -81,6 +83,46 @@ pa_table = hub_connection.to_table(columns=['target_end_date', 'value'],
 print(pa_table.shape)
 # (1350, 2)
 ```
+
+## Working with a cloud-based hub
+
+This package supports connecting to cloud-based hubs (primarily AWS S3 for the hubverse) via pyarrow's [abstract filesystem interface](https://arrow.apache.org/docs/python/filesystems.html), which works with both local file systems and those on the cloud. Here's an example of accessing the hubverse bucket **example-complex-forecast-hub** (arn:aws:s3:::example-complex-forecast-hub) via the S3 URI **s3://example-complex-forecast-hub/**. For example, continuing the above Python session:
+
+```python
+hub_connection = connect_hub('s3://example-complex-forecast-hub/')
+print(hub_connection.to_table().shape)
+# (553264, 9)
+```
+
+The cli tool also works with S3 URIs:
+
+```bash
+uv run hubdata dataset s3://example-complex-forecast-hub/
+╭─ s3://example-complex-forecast-hub/ ─────╮
+│                                          │
+│  hub_path:                               │
+│  - s3://example-complex-forecast-hub/    │
+│                                          │
+│  schema:                                 │
+│  - horizon: int32                        │
+│  - location: string                      │
+│  - model_id: string                      │
+│  - output_type: string                   │
+│  - output_type_id: string                │
+│  - reference_date: date32                │
+│  - target: string                        │
+│  - target_end_date: date32               │
+│  - value: double                         │
+│                                          │
+│  dataset:                                │
+│  - files: 12                             │
+│  - types: parquet (found) | csv (admin)  │
+│  - rows: 553,264                         │
+│                                          │
+╰──────────────────────────────── hubdata ─╯
+```
+
+> Note: This package's performance with cloud-based hubs can be slow due to how pyarrow's dataset scanning works.
 
 ## Working with data outside pyarrow: A Polars example
 
@@ -104,14 +146,15 @@ from hubdata import connect_hub
 
 # connect to the hub and then get a pyarrow Table, limiting the columns and rows loaded into memory as described above 
 hub_connection = connect_hub(Path('test/hubs/flu-metrocast'))
-pa_table = hub_connection.to_table(columns=['target_end_date', 'value', 'output_type', 'output_type_id', 'reference_date'],
-                                   filter=(pc.field('location') == 'Bronx') & (pc.field('target') == 'ILI ED visits'))
+pa_table = hub_connection.to_table(
+    columns=['target_end_date', 'value', 'output_type', 'output_type_id', 'reference_date'],
+    filter=(pc.field('location') == 'Bronx') & (pc.field('target') == 'ILI ED visits'))
 
 pa_table.shape
 # (1350, 5)
 
 # convert to polars DataFrame
-pl_df = pl.from_arrow(pa_table) 
+pl_df = pl.from_arrow(pa_table)
 pl_df
 # shape: (1_350, 5)
 # ┌─────────────────┬─────────────┬─────────────┬────────────────┬────────────────┐
