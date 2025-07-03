@@ -9,7 +9,9 @@
    :maxdepth: 2
    :caption: Contents:
 
+   cli
    usage
+   dev
    CONTRIBUTING
    reference/index
    CHANGELOG

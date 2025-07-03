@@ -60,8 +60,7 @@ def print_schema(hub_path):
 @click.argument('hub_path')
 def print_dataset_info(hub_path):
     """
-    A subcommand that prints dataset information for `hub_path`. Currently only works with a UnionDataset of
-    FileSystemDatasets.
+    A subcommand that prints dataset information for `hub_path`.
 
     :param hub_path: as passed to `connect_hub()`: either a local file system hub path or a cloud-based hub URI.
         Note: A local file system path must be an ABSOLUTE path and not a relative one

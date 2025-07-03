@@ -4,5 +4,5 @@
 HubConfig
 ==========
 
-.. autoclass:: hubdata.HubConfig
-    :members:
+.. automodule:: hubdata
+   :members:
