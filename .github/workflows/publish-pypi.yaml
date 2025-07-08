@@ -32,7 +32,7 @@ jobs:
     outputs:
       # set publish_to_pypi = true to publish to PyPI after
       # tagging a release (requires trusted publisher setup on PyPI)
-      publish_to_pypi: false
+      publish_to_pypi: 'true'
 
     steps:
       - name: Checkout 🛎️
