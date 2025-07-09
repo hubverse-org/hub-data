@@ -22,6 +22,14 @@ Run this command to invoke the [ruff](https://github.com/astral-sh/ruff) code fo
 uv run ruff check
 ```
 
+## Run a static type checker (mypy)
+
+Use this command to do some optional static type checking using [mypy](https://mypy-lang.org/):
+
+```bash
+uv tool run mypy . --ignore-missing-imports --disable-error-code=attr-defined
+```
+
 ## Measure code coverage (coverage)
 
 Run this command to generate a _text_ [coverage](https://coverage.readthedocs.io/en/7.8.2/) report:
@@ -37,14 +45,6 @@ This command generates an _html_ report:
 ```bash
 uv run --frozen coverage html
 rm -rf htmlcov/index.html
-```
-
-## Run a static type checker (mypy)
-
-Use this command to do some optional static type checking using [mypy](https://mypy-lang.org/):
-
-```bash
-uv tool run mypy . --ignore-missing-imports --disable-error-code=attr-defined
 ```
 
 ## Build documentation
