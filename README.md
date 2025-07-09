@@ -12,7 +12,12 @@ This package's objective is to implement a minimum viable product (MVP) Python v
 
 ### Latest
 
-TODO installing from https://pypi.org/
+Install the latest version from the Python Package Index (PyPI) [hubdata project](https://pypi.org/project/hubdata/) via the standard `pip install` command:
+
+```bash
+pip install --upgrade pip
+pip install hubdata
+```
 
 ### Development
 

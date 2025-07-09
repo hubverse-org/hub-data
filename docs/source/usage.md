@@ -15,6 +15,8 @@ For example, here is code using native pyarrow commands to count the number of r
 First, start a python interpreter with the required libraries:
 
 > Note: All shell examples assume you're using [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)), and that you first `cd` into this repo's root directory, e.g., `cd /<path_to_repos>/hub-data/` .
+>
+> Note: The Python-based directions below use [uv](https://docs.astral.sh/uv/) for managing Python versions, virtual environments, and dependencies, but if you already have a preferred Python toolset, that should work too.
 
 ```bash
 uv run python3
