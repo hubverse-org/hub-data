@@ -52,7 +52,7 @@ rm -rf htmlcov/index.html
 Run the following command to build documentation:
 
 ```bash
-uv run --group docs sphinx-build docs/source docs/_build/html
+uv run --group docs sphinx-build docs/source docs/_build/html --fresh-env --fail-on-warning
 ```
 
 To do the same and then serve documentation locally for debugging:

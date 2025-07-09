@@ -22,10 +22,9 @@ def connect_hub(hub_path: str | Path):
 
     :param hub_path: str (for local file system hubs or cloud based ones) or Path (local file systems only) pointing to
         a hub's root directory. it is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
-        From that page:
-            Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In addition, the
-            argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a str
-            requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
+        From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
+        addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
+        str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
     :return: a HubConnection
     :raise: RuntimeError if `hub_path` is invalid
     """

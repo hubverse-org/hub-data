@@ -18,10 +18,11 @@ Please ensure the following are true before creating the PR:
 
 - Your change is covered by tests, if applicable
 - Project documentation is updated, if applicable
-- The following local dev commands pass (see [dev.md](docs/source/dev.md)):
+- The following local dev commands pass without warnings or errors (see **docs/source/dev.md**):
     - `uv run pytest`
     - `uv run ruff check`
     - `uv tool run mypy . --ignore-missing-imports --disable-error-code=attr-defined`
+    - `uv run --group docs sphinx-build docs/source docs/_build/html --fresh-env --fail-on-warning`
 - The `## unreleased` section of [CHANGELOG.md](CHANGELOG.md) contains a description of your change
 
 The PR itself should:
