@@ -1,0 +1,65 @@
+# .github/workflows/publish-docs.yaml
+# publish sphinx docs to github pages
+name: Publish docs to GitHub Pages
+
+on:
+  push:
+    tags:
+      # only run workflow for tags in release format
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run
+# in-progress and latest queued. However, do NOT cancel in-progress runs as we
+# want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv 🌟
+        uses: astral-sh/setup-uv@bd01e18f51369d5a26f1651c3cb451d3417e3bba #v6.3.1
+
+      - name: Build Sphinx docs 🗿
+        shell: bash
+        run: |
+          uv run --group docs sphinx-build docs/source docs/_build/html --fresh-env --fail-on-warning
+
+      - name: Upload artifact 📤
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: static-docs
+          path: docs/_build/html
+
+  deploy-docs:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build-docs
+
+    steps:
+      - name: Deploy to GitHub pages 🚀
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: static-docs
+          token: ${{ github.token }}
+
