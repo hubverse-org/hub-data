@@ -74,9 +74,9 @@ print(pa_table.shape)
 # (1350, 2)
 ```
 
-## HubConnection.to_table() helper function
+## HubConnection.to_table() convenience function
 
-If you just want the pyarrow Table and don't need the pyarrow `Dataset` returned by `HubConnection.get_dataset()` then you can use the `HubConnection.to_table()` helper function, which calls `HubConnection.get_dataset()` for you and then passes its args through to the returned `Dataset.to_table()`. So the above example in full would be:
+If you just want the pyarrow Table and don't need the pyarrow `Dataset` returned by `HubConnection.get_dataset()` then you can use the `HubConnection.to_table()` convenience function, which calls `HubConnection.get_dataset()` for you and then passes its args through to the returned `Dataset.to_table()`. So the above example in full would be:
 
 ```python
 from pathlib import Path

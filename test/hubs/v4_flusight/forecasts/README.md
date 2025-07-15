@@ -1,0 +1,1 @@
+This is a non-model output file for testing. Because the file name begins with 'README', it will be ignored by default and no warning will be given.

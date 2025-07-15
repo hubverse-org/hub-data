@@ -156,3 +156,29 @@ def test_get_dataset_returned_class():
     assert isinstance(hub_ds, pa.dataset.UnionDataset)
     assert len(hub_ds.children) == 2
     assert all([isinstance(child, pa.dataset.FileSystemDataset) for child in hub_ds.children])
+
+
+def test__list_model_out_files():
+    hub_connection = connect_hub(Path('test/hubs/v4_flusight'))
+    model_out_files = hub_connection._list_model_out_files()
+    model_out_files_clean = [_ for _ in model_out_files if not _.base_name.startswith('.DS_Store')]
+    assert len(model_out_files_clean) == 10  # including README.md and invalid.txt
+    assert (sorted([_.base_name for _ in model_out_files_clean]) ==
+            ['2023-04-24-hub-baseline.csv', '2023-04-24-hub-ensemble.csv',
+             '2023-05-01-hub-baseline.csv', '2023-05-01-hub-ensemble.arrow', '2023-05-01-umass-ens.csv',
+             '2023-05-08-hub-baseline.parquet', '2023-05-08-hub-ensemble.parquet', '2023-05-08-umass-ens.csv',
+             'README.md', 'invalid.txt'])
+
+    for file_format, exp_invalid in (
+            ('csv', ['2023-05-01-hub-ensemble.arrow', '2023-05-08-hub-baseline.parquet',
+                     '2023-05-08-hub-ensemble.parquet', 'README.md', 'invalid.txt']),
+            ('parquet', ['2023-04-24-hub-baseline.csv', '2023-04-24-hub-ensemble.csv', '2023-05-01-hub-baseline.csv',
+                         '2023-05-01-hub-ensemble.arrow', '2023-05-01-umass-ens.csv', '2023-05-08-umass-ens.csv',
+                         'README.md', 'invalid.txt']),
+            ('arrow', ['2023-04-24-hub-baseline.csv', '2023-04-24-hub-ensemble.csv', '2023-05-01-hub-baseline.csv',
+                       '2023-05-01-umass-ens.csv', '2023-05-08-hub-baseline.parquet', '2023-05-08-hub-ensemble.parquet',
+                       '2023-05-08-umass-ens.csv', 'README.md', 'invalid.txt'])):
+        invalid_format_files = hub_connection._list_invalid_format_files(model_out_files, file_format,
+                                                                         ['README', '.DS_Store'])
+        invalid_format_files_clean = [_ for _ in invalid_format_files if not _.base_name.startswith('.DS_Store')]
+        assert sorted([_.base_name for _ in invalid_format_files_clean]) == exp_invalid
