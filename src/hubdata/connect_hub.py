@@ -165,7 +165,8 @@ class HubConnection:
                                        for ignore_file in ignore_files_default])]
 
         if unopened_files:
-            logger.warn(f'ignored {len(unopened_files)} file{'s' if len(unopened_files) > 1 else ''}: '
+            plural = 's' if len(unopened_files) > 1 else ''
+            logger.warn(f'ignored {len(unopened_files)} file{plural}: '
                         f'{[model_out_file.path for model_out_file in unopened_files]}')
 
 
