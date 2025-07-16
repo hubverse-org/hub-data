@@ -1,0 +1,1 @@
+This is a non-model output file for testing. Because the file name does not begin with 'README', '.DS_Store', it will not be ignored by default and a warning will be given.

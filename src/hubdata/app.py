@@ -26,8 +26,10 @@ def print_schema(hub_path):
     :param hub_path: as passed to `connect_hub()`: either a local file system hub path or a cloud-based hub URI.
         Note: A local file system path must be an ABSOLUTE path and not a relative one
     """
+    console = Console()
     try:
-        hub_connection = connect_hub(hub_path)
+        with console.status('Connecting to hub...'):
+            hub_connection = connect_hub(hub_path)
     except Exception as ex:
         print(f'error connecting to hub: {ex}')
         return
@@ -42,7 +44,6 @@ def print_schema(hub_path):
         schema_lines.append(f'- [green]{field.name}[/green]: [bright_magenta]{field.type}[/bright_magenta]')
 
     # finally, print a Panel containing all the groups
-    console = Console()
     console.print(
         Panel(
             Group(Group(*hub_path_lines), Group(*schema_lines)),
@@ -65,13 +66,16 @@ def print_dataset_info(hub_path):
     :param hub_path: as passed to `connect_hub()`: either a local file system hub path or a cloud-based hub URI.
         Note: A local file system path must be an ABSOLUTE path and not a relative one
     """
+    console = Console()
     try:
-        hub_connection = connect_hub(hub_path)
+        with console.status('Connecting to hub...'):
+            hub_connection = connect_hub(hub_path)
     except Exception as ex:
         print(f'error connecting to hub: {ex}')
         return
 
-    hub_ds = hub_connection.get_dataset()
+    with console.status('Getting dataset...'):
+        hub_ds = hub_connection.get_dataset()
     if not isinstance(hub_ds, pa.dataset.FileSystemDataset) and not isinstance(hub_ds, pa.dataset.UnionDataset):
         print(f'unsupported dataset type: {type(hub_ds)}')
         return
@@ -90,15 +94,12 @@ def print_dataset_info(hub_path):
     num_files = sum([len(child_ds.files) for child_ds in filesystem_datasets])
     found_file_types = ', '.join([child_ds.format.default_extname for child_ds in filesystem_datasets])
     admin_file_types = ', '.join(hub_connection.admin['file_format'])
-    num_rows = hub_ds.count_rows()
     dataset_lines = ['\n[b]dataset[/b]:',
                      f'- [green]files[/green]: [bright_magenta]{num_files:,}[/bright_magenta]',
                      f'- [green]types[/green]: [bright_magenta]{found_file_types} (found) | {admin_file_types} (admin)'
-                     f'[/bright_magenta]',
-                     f'- [green]rows[/green]: [bright_magenta]{num_rows:,}[/bright_magenta]']
+                     f'[/bright_magenta]']
 
     # finally, print a Panel containing all the groups
-    console = Console()
     console.print(
         Panel(
             Group(Group(*hub_path_lines), Group(*schema_lines), Group(*dataset_lines)),
