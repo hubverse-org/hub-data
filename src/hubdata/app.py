@@ -94,13 +94,10 @@ def print_dataset_info(hub_path):
     num_files = sum([len(child_ds.files) for child_ds in filesystem_datasets])
     found_file_types = ', '.join([child_ds.format.default_extname for child_ds in filesystem_datasets])
     admin_file_types = ', '.join(hub_connection.admin['file_format'])
-    with console.status('Counting rows...'):
-        num_rows = hub_ds.count_rows()
     dataset_lines = ['\n[b]dataset[/b]:',
                      f'- [green]files[/green]: [bright_magenta]{num_files:,}[/bright_magenta]',
                      f'- [green]types[/green]: [bright_magenta]{found_file_types} (found) | {admin_file_types} (admin)'
-                     f'[/bright_magenta]',
-                     f'- [green]rows[/green]: [bright_magenta]{num_rows:,}[/bright_magenta]']
+                     f'[/bright_magenta]']
 
     # finally, print a Panel containing all the groups
     console.print(

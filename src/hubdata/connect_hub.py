@@ -79,11 +79,14 @@ class HubConnection:
         self.model_output_dir = model_output_dir
 
 
-    def get_dataset(self, ignore_files: Iterable[str] = ('README', '.DS_Store')) -> ds:
+    def get_dataset(self, exclude_invalid_files: bool = False,
+                    ignore_files: Iterable[str] = ('README', '.DS_Store')) -> ds:
         """
         Main entry point for getting a pyarrow dataset to work with. Prints a warning about any files that were skipped
         during dataset file discovery.
 
+        :param: exclude_invalid_files: variable passed through to pyarrow's `dataset.dataset()` method. defaults to
+            False, which works for most situations
         :param: ignore_files a str list of file **names** (not paths) or file **prefixes** to ignore when discovering
             model output files to include in dataset connections. Parent directory names should not be included. The
             default is to ignore the common files `"README"` and `".DS_Store"`, but additional files can be excluded by
@@ -91,11 +94,11 @@ class HubConnection:
         :return: a pyarrow.dataset.Dataset for my model_output_dir
         """
         # create the dataset. NB: we are using dataset "directory partitioning" to automatically get the `model_id`
-        # column from directory names. regarding performance on S3-based datasets, we set `exclude_invalid_files=False`,
-        # which speeds up pyarrow's dataset processing, but opens the door to errors: "unsupported files may be present
-        # in the Dataset (resulting in an error at scan time)". we prevent this from happening by manually constructing
-        # and passing `ignore_prefixes` based on file extensions. this method accepts `ignore_files` to allow custom
-        # prefixes to ignore. it defaults to common ones for hubs
+        # column from directory names. regarding performance on S3-based datasets, we default `exclude_invalid_files` to
+        # False, which speeds up pyarrow's dataset processing, but opens the door to errors: "unsupported files may be
+        # present in the Dataset (resulting in an error at scan time)". we prevent this from happening by manually
+        # constructing and passing `ignore_prefixes` based on file extensions. this method accepts `ignore_files` to
+        # allow custom prefixes to ignore. it defaults to common ones for hubs
 
         # NB: we force file_formats to .parquet if not a LocalFileSystem (e.g., an S3FileSystem). otherwise we use the
         # list from self.admin['file_format']
@@ -109,7 +112,7 @@ class HubConnection:
             file_format_to_ignore_files[file_format] = _ignore_files
             dataset = ds.dataset(self.model_output_dir, filesystem=self._filesystem, format=file_format,
                                  schema=self.schema, partitioning=['model_id'],  # NB: hard-coded partitioning!
-                                 exclude_invalid_files=False,
+                                 exclude_invalid_files=exclude_invalid_files,
                                  ignore_prefixes=[file_info.base_name for file_info in _ignore_files])
             datasets.append(dataset)
         datasets = [dataset for dataset in datasets if len(dataset.files) != 0]
