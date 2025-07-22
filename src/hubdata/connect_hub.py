@@ -1,10 +1,12 @@
 import json
+import os
 from pathlib import Path
 from typing import Iterable
 
 import pyarrow as pa
 import pyarrow.dataset as ds
 import structlog
+from cloudpathlib import AnyPath, S3Client, S3Path
 from pyarrow import fs
 
 from hubdata.create_hub_schema import create_hub_schema
@@ -38,7 +40,7 @@ class HubConnection:
     instances of this class, rather than by direct instantiation
 
     Instance variables:
-    - hub_path: str pointing to a hub's root directory as passed to `connect_hub()`
+    - hub_path: os.PathLike pointing to a hub's root directory as passed to `connect_hub()`
     - schema: the pa.Schema for `HubConnection.get_dataset()`. created by the constructor via `create_hub_schema()`
     - admin: the hub's `admin.json` contents as a dict
     - tasks: "" `tasks.json` ""
@@ -46,23 +48,21 @@ class HubConnection:
     """
 
 
-    def __init__(self, hub_path: str | Path):
+    def __init__(self, hub_path: str | os.PathLike):
         """
         :param hub_path: str or Path pointing to a hub's root directory as passed to `connect_hub()`
         """
-        # set self.hub_path and then get an arrow FileSystem for it, letting it decide the correct subclass based on
-        # that arg, catching any errors. also set two internal instance variables used by HubConnection.get_dataset():
-        # self._filesystem and self._filesystem_path
-        self.hub_path: str | Path = hub_path
-        try:
-            self._filesystem, self._filesystem_path = fs.FileSystem.from_uri(self.hub_path)
-        except Exception:
-            raise RuntimeError(f'invalid hub_path: {self.hub_path}')
+        # set self.hub_path using cloudpath. note that we do some work if it's an S3Path to make it function with public
+        # buckets without requiring credentials (o/w get NoCredentialsError)
+        anypath = AnyPath(hub_path)
+        if isinstance(anypath, S3Path):
+            anypath = S3Client(no_sign_request=True).CloudPath(str(anypath))  # str() -> input string
+        self.hub_path: os.PathLike = anypath
 
         # set self.admin and self.tasks, checking for existence
         try:
-            with self._filesystem.open_input_file(f'{self._filesystem_path}/hub-config/admin.json') as admin_fp, \
-                    self._filesystem.open_input_file(f'{self._filesystem_path}/hub-config/tasks.json') as tasks_fp:
+            with open(self.hub_path / 'hub-config/admin.json') as admin_fp, \
+                    open(self.hub_path / 'hub-config/tasks.json') as tasks_fp:
                 self.admin = json.load(admin_fp)
                 self.tasks = json.load(tasks_fp)
         except Exception as ex:
@@ -71,10 +71,19 @@ class HubConnection:
         # set schema
         self.schema = create_hub_schema(self.tasks)
 
+        # set self.model_metadata_schema, first checking for model-metadata-schema.json existence. warn (not error) if
+        # not found to be consistent with R hubData
+        self.model_metadata_schema: dict | None = None
+        try:
+            with open(self.hub_path / 'hub-config/model-metadata-schema.json') as model_metadata_fp:
+                self.model_metadata_schema = json.load(model_metadata_fp)
+        except Exception as ex:
+            self.model_metadata_schema = None
+            logger.warn(f'model-metadata-schema.json not found: {ex!r}')
+
         # set self.model_output_dir, first checking for directory existence
-        model_output_dir_name = self.admin['model_output_dir'] if 'model_output_dir' in self.admin else 'model-output'
-        model_output_dir = f'{self._filesystem_path}/{model_output_dir_name}'
-        if self._filesystem.get_file_info(model_output_dir).type == fs.FileType.NotFound:
+        model_output_dir = self.hub_path / self._model_output_dir_name()
+        if not model_output_dir.exists():
             logger.warn(f'model_output_dir not found: {model_output_dir!r}')
         self.model_output_dir = model_output_dir
 
@@ -93,6 +102,16 @@ class HubConnection:
             specifying them here.
         :return: a pyarrow.dataset.Dataset for my model_output_dir
         """
+        # get an arrow FileSystem for hub_path, letting it decide the correct subclass based on that arg, catching any
+        # errors. we set `from_uri()`'s `uri` argument based on whether self.hub_path is a Path (i.e., a local
+        # filesystem-based hub) or an S3Path (an S3-based hub). for the latter we use `str()` to get the input string
+        # that it was passed, e.g., 's3://covid-variant-nowcast-hub'
+        try:
+            filesystem, filesystem_path = fs.FileSystem.from_uri(
+                self.hub_path if isinstance(self.hub_path, Path) else str(self.hub_path))
+        except Exception:
+            raise RuntimeError(f'invalid hub_path: {self.hub_path}')
+
         # create the dataset. NB: we are using dataset "directory partitioning" to automatically get the `model_id`
         # column from directory names. regarding performance on S3-based datasets, we default `exclude_invalid_files` to
         # False, which speeds up pyarrow's dataset processing, but opens the door to errors: "unsupported files may be
@@ -102,18 +121,18 @@ class HubConnection:
 
         # NB: we force file_formats to .parquet if not a LocalFileSystem (e.g., an S3FileSystem). otherwise we use the
         # list from self.admin['file_format']
-        file_formats = ['parquet'] if not isinstance(self._filesystem, fs.LocalFileSystem) \
-            else self.admin['file_format']
+        file_formats = ['parquet'] if not isinstance(filesystem, fs.LocalFileSystem) else self.admin['file_format']
         model_out_files = self._list_model_out_files()  # model_output_dir, type='file'
         datasets = []
-        file_format_to_ignore_files: dict[str, list[fs.FileInfo]] = {}  # for warning
+        file_format_to_ignore_files: dict[str, list[os.PathLike]] = {}  # for warning
         for file_format in file_formats:
             _ignore_files = self._list_invalid_format_files(model_out_files, file_format, ignore_files)
             file_format_to_ignore_files[file_format] = _ignore_files
-            dataset = ds.dataset(self.model_output_dir, filesystem=self._filesystem, format=file_format,
+            dataset = ds.dataset(f'{filesystem_path}/{self._model_output_dir_name()}', filesystem=filesystem,
+                                 format=file_format,
                                  schema=self.schema, partitioning=['model_id'],  # NB: hard-coded partitioning!
                                  exclude_invalid_files=exclude_invalid_files,
-                                 ignore_prefixes=[file_info.base_name for file_info in _ignore_files])
+                                 ignore_prefixes=[path.stem for path in _ignore_files])
             datasets.append(dataset)
         datasets = [dataset for dataset in datasets if len(dataset.files) != 0]
         self._warn_unopened_files(model_out_files, ignore_files, file_format_to_ignore_files)
@@ -124,33 +143,34 @@ class HubConnection:
                                if isinstance(dataset, pa.dataset.FileSystemDataset) and (len(dataset.files) != 0)])
 
 
-    def _list_model_out_files(self) -> list[fs.FileInfo]:
+    def _model_output_dir_name(self):
+        return self.admin['model_output_dir'] if 'model_output_dir' in self.admin else 'model-output'
+
+
+    def _list_model_out_files(self) -> list[os.PathLike]:
         """
-        get_dataset() helper that returns a list of all files in self.model_output_dir. note that for now uses
-        FileSystem.get_file_info() regardless of whether it's a LocalFileSystem or S3FileSystem. also note that no
+        get_dataset() helper that returns a list of all files of any type in self.model_output_dir. note that for now
+        uses FileSystem.get_file_info() regardless of whether it's a LocalFileSystem or S3FileSystem. also note that no
         filtering of files is done, i.e., invalid files might be included
         """
-        return [file_info
-                for file_info in
-                self._filesystem.get_file_info(fs.FileSelector(self.model_output_dir, recursive=True))
-                if file_info.type == fs.FileType.File]
+        return [path for path in self.model_output_dir.glob('**/*') if path.is_file()]
 
 
     @staticmethod
-    def _list_invalid_format_files(model_out_files: list[fs.FileInfo], file_format: str,
-                                   ignore_files_default: Iterable[str]) -> list[fs.FileInfo]:
+    def _list_invalid_format_files(model_out_files: list[os.PathLike], file_format: str,
+                                   ignore_files_default: Iterable[str]) -> list[os.PathLike]:
         """
         get_dataset() helper that returns a list of file paths in `model_out_files` that do *not* match the
         `file_format` extension
         """
-        return [file_info for file_info in model_out_files
-                if (file_info.extension != file_format)
-                or any([file_info.base_name.startswith(ignore_file) for ignore_file in ignore_files_default])]
+        return [path for path in model_out_files
+                if (path.suffix != f'.{file_format}')  # pathlib wants the dot for suffixes
+                or any([path.name.startswith(ignore_file) for ignore_file in ignore_files_default])]
 
 
     @staticmethod
-    def _warn_unopened_files(model_out_files: list[fs.FileInfo], ignore_files_default: Iterable[str],
-                             file_format_to_ignore_files: dict[str, list[fs.FileInfo]]):
+    def _warn_unopened_files(model_out_files: list[os.PathLike], ignore_files_default: Iterable[str],
+                             file_format_to_ignore_files: dict[str, list[os.PathLike]]):
         """
         get_dataset() helper
         """
@@ -162,15 +182,13 @@ class HubConnection:
 
         # warn about files in model_out_files that are present in all file_format_to_ignore_files.values(), i.e., that
         # were never OK for any file_format
-        unopened_files = [model_out_file for model_out_file in model_out_files
-                          if is_present_all_file_formats(model_out_file)
-                          and not any([model_out_file.base_name.startswith(ignore_file)
-                                       for ignore_file in ignore_files_default])]
+        unopened_files = [path for path in model_out_files
+                          if is_present_all_file_formats(path)
+                          and not any([path.stem.startswith(ignore_file) for ignore_file in ignore_files_default])]
 
         if unopened_files:
             plural = 's' if len(unopened_files) > 1 else ''
-            logger.warn(f'ignored {len(unopened_files)} file{plural}: '
-                        f'{[model_out_file.path for model_out_file in unopened_files]}')
+            logger.warn(f'ignored {len(unopened_files)} file{plural}: {unopened_files}')
 
 
     def to_table(self, *args, **kwargs) -> pa.Table:

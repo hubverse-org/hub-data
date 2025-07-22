@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def test_hub_fields():
 
     # spot-check model_output_dir
     hub_connection = connect_hub(Path('test/hubs/simple'))
-    assert isinstance(hub_connection.model_output_dir, str)
+    assert isinstance(hub_connection.model_output_dir, os.PathLike)
     assert sorted([f.name for f in Path(hub_connection.model_output_dir).iterdir()
                    if not f.name.startswith('.')]) == ['hub-baseline', 'team1-goodmodel']
 
@@ -46,13 +47,13 @@ def test_admin_model_output_dir(tmp_path):
     # case: specified in admin.json, but using standard name
     hub_path = Path('test/hubs/example-complex-scenario-hub')  # "model_output_dir": "model-output"
     hub_connection = connect_hub(hub_path)
-    assert hub_connection.model_output_dir == str((hub_path / 'model-output').absolute())
+    assert hub_connection.model_output_dir == hub_path / 'model-output'
 
     # case: no "model_output_dir" key in admin.json. note: covid19-forecast-hub does not have a model-output dir, which
     # will cause `connect_hub()` to log a warning but not raise an exception
     hub_path = Path('test/hubs/covid19-forecast-hub')
     hub_connection = connect_hub(hub_path)
-    assert hub_connection.model_output_dir == str((hub_path / 'model-output').absolute())
+    assert hub_connection.model_output_dir == hub_path / 'model-output'
 
     # case: specified in admin.json, but using non-standard name
     shutil.copytree('test/hubs/example-complex-forecast-hub/', tmp_path, dirs_exist_ok=True)
@@ -64,7 +65,30 @@ def test_admin_model_output_dir(tmp_path):
     with open(admin_json_path, 'w') as admin_fp:
         json.dump(admin_dict, admin_fp)
     hub_connection = connect_hub(tmp_path)
-    assert hub_connection.model_output_dir == str((tmp_path / model_output_dir_name).absolute())
+    assert hub_connection.model_output_dir == tmp_path / model_output_dir_name
+
+
+@pytest.mark.parametrize('config_file_is_error_msg',
+                         [('admin.json', True, 'admin.json or tasks.json not found'),
+                          ('tasks.json', True, 'admin.json or tasks.json not found'),
+                          ('model-metadata-schema.json', False, 'model-metadata-schema.json not found')])
+def test_missing_files_or_dirs(tmp_path, config_file_is_error_msg):
+    """
+    tests file not found or directory not found cases. notes:
+    - the case of hub_dir itself missing is tested above by `test_hub_dir_existence()`
+    - the case of model-output dir missing is tested above by `test_admin_model_output_dir()`
+    """
+    shutil.copytree('test/hubs/example-complex-forecast-hub/', tmp_path, dirs_exist_ok=True)
+
+    original_file = tmp_path / 'hub-config' / config_file_is_error_msg[0]
+    new_file = tmp_path / 'hub-config' / f'{config_file_is_error_msg[0]}.orig'
+    os.rename(original_file, new_file)
+    if config_file_is_error_msg[1]:
+        with pytest.raises(RuntimeError, match=f'{config_file_is_error_msg[2]}'):
+            connect_hub(tmp_path)
+    else:
+        connect_hub(tmp_path)
+    os.rename(new_file, original_file)
 
 
 def test_query_data():
@@ -161,9 +185,9 @@ def test_get_dataset_returned_class():
 def test__list_model_out_files():
     hub_connection = connect_hub(Path('test/hubs/v4_flusight'))
     model_out_files = hub_connection._list_model_out_files()
-    model_out_files_clean = [_ for _ in model_out_files if not _.base_name.startswith('.DS_Store')]
+    model_out_files_clean = [path for path in model_out_files if not path.stem.startswith('.DS_Store')]
     assert len(model_out_files_clean) == 10  # including README.md and invalid.txt
-    assert (sorted([_.base_name for _ in model_out_files_clean]) ==
+    assert (sorted([path.name for path in model_out_files_clean]) ==
             ['2023-04-24-hub-baseline.csv', '2023-04-24-hub-ensemble.csv',
              '2023-05-01-hub-baseline.csv', '2023-05-01-hub-ensemble.arrow', '2023-05-01-umass-ens.csv',
              '2023-05-08-hub-baseline.parquet', '2023-05-08-hub-ensemble.parquet', '2023-05-08-umass-ens.csv',
@@ -180,5 +204,5 @@ def test__list_model_out_files():
                        '2023-05-08-umass-ens.csv', 'README.md', 'invalid.txt'])):
         invalid_format_files = hub_connection._list_invalid_format_files(model_out_files, file_format,
                                                                          ['README', '.DS_Store'])
-        invalid_format_files_clean = [_ for _ in invalid_format_files if not _.base_name.startswith('.DS_Store')]
-        assert sorted([_.base_name for _ in invalid_format_files_clean]) == exp_invalid
+        invalid_format_files_clean = [path for path in invalid_format_files if not path.name.startswith('.DS_Store')]
+        assert sorted([path.name for path in invalid_format_files_clean]) == exp_invalid

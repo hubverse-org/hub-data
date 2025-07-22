@@ -11,6 +11,7 @@ readme = 'README.md'
 
 dependencies = [
     "click>=8.1.8",
+    "cloudpathlib[s3]>=0.21.1",
     "pyarrow>=19.0.1",
     'rich',
     'structlog',
