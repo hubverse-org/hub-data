@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -35,6 +36,11 @@ def test_hub_fields():
     # check schema
     assert connect_hub(hub_path).schema == create_hub_schema(hub_connection.tasks)
 
+    # spot-check model_metadata_schema
+    assert (list(connect_hub(hub_path).model_metadata_schema.keys()) == ['$schema', 'title', 'description', 'type',
+                                                                         'properties', 'additionalProperties',
+                                                                         'required'])
+
     # spot-check model_output_dir
     hub_connection = connect_hub(Path('test/hubs/simple'))
     assert isinstance(hub_connection.model_output_dir, str)
@@ -65,6 +71,29 @@ def test_admin_model_output_dir(tmp_path):
         json.dump(admin_dict, admin_fp)
     hub_connection = connect_hub(tmp_path)
     assert hub_connection.model_output_dir == str((tmp_path / model_output_dir_name).absolute())
+
+
+@pytest.mark.parametrize('config_file_is_error_msg',
+                         [('admin.json', True, 'admin.json or tasks.json not found'),
+                          ('tasks.json', True, 'admin.json or tasks.json not found'),
+                          ('model-metadata-schema.json', False, 'model-metadata-schema.json not found')])
+def test_missing_files_or_dirs(tmp_path, config_file_is_error_msg):
+    """
+    tests file not found or directory not found cases. notes:
+    - the case of hub_dir itself missing is tested above by `test_hub_dir_existence()`
+    - the case of model-output dir missing is tested above by `test_admin_model_output_dir()`
+    """
+    shutil.copytree('test/hubs/example-complex-forecast-hub/', tmp_path, dirs_exist_ok=True)
+
+    original_file = tmp_path / 'hub-config' / config_file_is_error_msg[0]
+    new_file = tmp_path / 'hub-config' / f'{config_file_is_error_msg[0]}.orig'
+    os.rename(original_file, new_file)
+    if config_file_is_error_msg[1]:
+        with pytest.raises(RuntimeError, match=f'{config_file_is_error_msg[2]}'):
+            connect_hub(tmp_path)
+    else:
+        connect_hub(tmp_path)
+    os.rename(new_file, original_file)
 
 
 def test_query_data():

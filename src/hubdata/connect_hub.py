@@ -71,6 +71,17 @@ class HubConnection:
         # set schema
         self.schema = create_hub_schema(self.tasks)
 
+        # set self.model_metadata_schema, first checking for model-metadata-schema.json existence. warn (not error) if
+        # not found to be consistent with R hubData
+        self.model_metadata_schema: dict | None = None
+        try:
+            with (self._filesystem.open_input_file(f'{self._filesystem_path}/hub-config/model-metadata-schema.json')
+                  as model_metadata_fp):
+                self.model_metadata_schema = json.load(model_metadata_fp)
+        except Exception as ex:
+            self.model_metadata_schema = None
+            logger.warn(f'model-metadata-schema.json not found: {ex!r}')
+
         # set self.model_output_dir, first checking for directory existence
         model_output_dir_name = self.admin['model_output_dir'] if 'model_output_dir' in self.admin else 'model-output'
         model_output_dir = f'{self._filesystem_path}/{model_output_dir_name}'
