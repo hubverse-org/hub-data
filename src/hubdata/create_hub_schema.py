@@ -25,7 +25,7 @@ def create_hub_schema(tasks: dict, output_type_id_datatype: str = 'from_config',
     """
     # build col_name_to_pa_types, which maps each found column_name to a list of pa.DataTypes that were found for it.
     # afterward we merge the data types to get the "simplest" one
-    col_name_to_pa_types: dict[str, list[pa.DataType]] = defaultdict(list)
+    col_name_to_pa_types: dict[str, list[pa.DataType | None]] = defaultdict(list)
     for the_round in tasks['rounds']:
         for model_task in the_round['model_tasks']:
             for column_name, column_type in _columns_for_model_task(model_task, partitions):
@@ -163,10 +163,11 @@ def _pa_type_for_req_and_opt_vals(required: list | None, optional: list | None) 
     return _pa_type_simplest_for_pa_types(pa_types) if pa_types else None
 
 
-def _pa_type_simplest_for_pa_types(pa_types: list[pa.DataType]) -> pa.DataType:
+def _pa_type_simplest_for_pa_types(pa_types: list[pa.DataType | None]) -> pa.DataType:
     """
-    Given a list of pa.DataTypes, return the "simplest" one based on the below logic.
+    Given a list of pa.DataTypes or Nones, return the "simplest" one based on the below logic.
     """
+    pa_types = [pa_type for pa_type in pa_types if pa_type is not None]  # remove influence of any None types
     if pa.string() in pa_types:  # any string present overrides all other types
         return pa.string()
 
@@ -177,5 +178,5 @@ def _pa_type_simplest_for_pa_types(pa_types: list[pa.DataType]) -> pa.DataType:
     if pa_types_set == {pa.int32(), pa.float64()}:  # float wins if all numbers. the only acceptable type mix case
         return pa.float64()
 
-    # types didn't agree or no types, so default to string
+    # types didn't agree, all Nones, or no types -> default to string
     return pa.string()

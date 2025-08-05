@@ -21,10 +21,17 @@ def tests__pa_type_for_req_and_opt_vals(required, optional, exp_pa_type):
 
 
 @pytest.mark.parametrize('pa_types,exp_pa_type',
-                         [([pa.float64(), pa.string()], pa.string()),
-                          ([pa.float64(), pa.float64()], pa.float64()),
-                          ([pa.int32(), pa.float64()], pa.float64()),
-                          ([], pa.string())])
+                         [([pa.float64(), pa.string()], pa.string()),  # string overrides float -> string
+                          ([pa.float64(), pa.string(), None], pa.string()),  # "", None no influence -> string
+                          ([pa.float64(), pa.date32()], pa.string()),  # mixed non-string -> string
+                          ([pa.float64(), pa.date32(), None], pa.string()),  # "", None no influence -> string
+                          ([pa.float64(), None], pa.float64()),  # float, None no influence -> float
+                          ([None], pa.string()),  # all Nones -> string
+                          ([None, None], pa.string()),  # ""
+                          ([pa.float64(), pa.float64()], pa.float64()),  # two floats -> float
+                          ([pa.int32(), pa.int32()], pa.int32()),  # two ints -> int
+                          ([pa.int32(), pa.float64()], pa.float64()),  # float overrides int
+                          ([], pa.string())])  # no types -> string
 def test__pa_type_simplest_for_pa_types(pa_types, exp_pa_type):
     assert _pa_type_simplest_for_pa_types(pa_types) == exp_pa_type
 
@@ -99,9 +106,9 @@ def test_flusight_forecast_hub():
     act_schema = create_hub_schema(hub_connection.tasks)
     exp_schema = pa.schema([('reference_date', pa.date32()),
                             ('target', pa.string()),
-                            ('horizon', pa.string()),
+                            ('horizon', pa.int32()),
                             ('location', pa.string()),
-                            ('target_end_date', pa.string()),
+                            ('target_end_date', pa.date32()),
                             ('output_type', pa.string()),
                             ('output_type_id', pa.string()),
                             ('value', pa.float64()),
