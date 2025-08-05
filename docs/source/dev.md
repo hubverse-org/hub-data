@@ -6,6 +6,11 @@ Following are some useful local commands for testing and trying out the package'
 >
 > Note: The Python-based directions below use [uv](https://docs.astral.sh/uv/) for managing Python versions, virtual environments, and dependencies, but if you already have a preferred Python toolset, that should work too.
 
+Don't forget to:
+
+- set `__version__` in **src/hubdata/__init__.py**
+- add a corresponding **CHANGELOG.md** entry
+
 ## Run unit tests (pytest)
 
 Use this command to run tests via [pytest](https://docs.pytest.org/en/stable/):
