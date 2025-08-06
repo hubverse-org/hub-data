@@ -4,6 +4,20 @@ All notable changes to `hubdata` are documented here.
 
 ## Unreleased
 
+## 0.1.3
+
+### Added
+
+- Added the `HubConnection.model_metadata_schema` property
+
+### Changed
+
+- Fixed a bug in `create_hub_schema()` where it was allowing `tasks.json` `"required": null` and `"optional": null` values to influence type inference - see the closed issue [create_hub_schema() does not match R version for FluSight-forecast-hub #45](https://github.com/hubverse-org/hub-data/issues/45)
+
+### Internal
+
+- N/A
+
 ## 0.1.2
 
 ### Added
