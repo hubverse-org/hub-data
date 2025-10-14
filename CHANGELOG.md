@@ -4,6 +4,20 @@ All notable changes to `hubdata` are documented here.
 
 ## Unreleased
 
+## 0.1.4
+
+### Added
+
+- N/A
+
+### Changed
+
+- Added a documentation link back to the repo - see the issue [add a link to the GitHub in the documentation front page and on the pypi listing #51](https://github.com/hubverse-org/hub-data/issues/51)
+
+### Internal
+
+- N/A
+
 ## 0.1.3
 
 ### Added
