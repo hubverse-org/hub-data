@@ -4,6 +4,20 @@ All notable changes to `hubdata` are documented here.
 
 ## Unreleased
 
+## 0.1.5
+
+### Added
+
+- N/A
+
+### Changed
+
+- N/A
+
+### Internal
+
+- Correcting a workflow release issue.
+
 ## 0.1.4
 
 ### Added
