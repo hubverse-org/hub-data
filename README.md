@@ -31,3 +31,5 @@ pip install git+https://github.com/hubverse-org/hub-data
 ## Contributing
 
 To contribute to the project, please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+For more details, source code, issue tracking, and the latest updates, please visit the [hubdata GitHub repository](https://github.com/hubverse-org/hub-data).
