@@ -12,26 +12,6 @@ from hubdata.create_hub_schema import create_hub_schema
 logger = structlog.get_logger()
 
 
-def connect_hub(hub_path: str | Path):
-    """
-    The main entry point for connecting to a hub, providing access to the instance variables documented in
-    `HubConnection`, including admin.json and tasks.json as dicts. It also allows connecting to data in the hub's model
-    output directory for querying and filtering across all model files. The hub can be located in a local file system or
-    in the cloud on AWS or GCS. Note: Calls `create_hub_schema()` to get the schema to use when calling
-    `HubConnection.get_dataset()`. See: https://docs.hubverse.io/en/latest/user-guide/hub-structure.html for details on
-    how hubs directories are laid out.
-
-    :param hub_path: str (for local file system hubs or cloud based ones) or Path (local file systems only) pointing to
-        a hub's root directory. it is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
-        From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
-        addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
-        str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
-    :return: a HubConnection
-    :raise: RuntimeError if `hub_path` is invalid
-    """
-    return HubConnection(hub_path)
-
-
 class HubConnection:
     """
     Provides convenient access to various parts of a hub's `tasks.json` file. Use the `connect_hub` function to create
@@ -190,3 +170,23 @@ class HubConnection:
         `pyarrow.Table`.
         """
         return self.get_dataset().to_table(*args, **kwargs)
+
+
+def connect_hub(hub_path: str | Path) -> HubConnection:
+    """
+    The main entry point for connecting to a hub, providing access to the instance variables documented in
+    `HubConnection`, including admin.json and tasks.json as dicts. It also allows connecting to data in the hub's model
+    output directory for querying and filtering across all model files. The hub can be located in a local file system or
+    in the cloud on AWS or GCS. Note: Calls `create_hub_schema()` to get the schema to use when calling
+    `HubConnection.get_dataset()`. See: https://docs.hubverse.io/en/latest/user-guide/hub-structure.html for details on
+    how hubs directories are laid out.
+
+    :param hub_path: str (for local file system hubs or cloud based ones) or Path (local file systems only) pointing to
+        a hub's root directory. it is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
+        From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
+        addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
+        str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
+    :return: a HubConnection
+    :raise: RuntimeError if `hub_path` is invalid
+    """
+    return HubConnection(hub_path)
