@@ -71,8 +71,9 @@ def _validate_target_data(hub_conn: HubConnection, is_time_series: bool) -> fs.F
         raise RuntimeError(f'did not find {target_data_name}.csv, {target_data_name}.parquet, or {target_data_name}/')
 
     if len(found_file_infos) > 1:  # more than one was found
+        found_names = ', '.join([repr(_.base_name) for _ in found_file_infos])
         raise RuntimeError(f'found more than one {target_data_name}.csv, {target_data_name}.parquet, or '
-                           f'{target_data_name}/ : {', '.join([repr(_.base_name) for _ in found_file_infos])}')
+                           f'{target_data_name}/ : {found_names}')
 
     return found_file_infos[0]
 
