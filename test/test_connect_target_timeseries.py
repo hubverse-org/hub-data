@@ -8,8 +8,8 @@ import pyarrow.csv as csv
 import pyarrow.parquet as parquet
 import pytest
 
-from hubdata.connect_target_timeseries import connect_target_timeseries
-from hubdata.create_timeseries_schema import create_timeseries_schema
+from hubdata.connect_target_data import connect_target_timeseries
+from hubdata.create_target_data_schema import create_timeseries_schema
 
 
 def test_no_time_series_data(tmp_path):

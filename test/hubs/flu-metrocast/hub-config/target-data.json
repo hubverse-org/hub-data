@@ -6,5 +6,7 @@
     "location"
   ],
   "date_col": "target_end_date",
-  "versioned": true
+  "time-series": {
+    "versioned": true
+  }
 }

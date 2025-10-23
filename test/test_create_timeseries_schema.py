@@ -3,7 +3,7 @@ from pathlib import Path
 import pyarrow as pa
 import pytest
 
-from hubdata.create_timeseries_schema import create_timeseries_schema
+from hubdata.create_target_data_schema import create_timeseries_schema
 
 
 def test_no_target_data_json_file():
@@ -16,6 +16,7 @@ def test_ecfh():
     #   - observable_unit: top-level only
     #   - versioned: top-level only, false
     #   - time-series: absent
+    #   - oracle-output: present. has_output_type_ids
     act_schema = create_timeseries_schema(Path('test/hubs/example-complex-forecast-hub'))
 
     # REF: columns: /.../example-complex-forecast-hub/target-data/time-series.csv
@@ -34,6 +35,7 @@ def test_flu_metrocast():
     #   - observable_unit: top-level only
     #   - versioned: top-level only, true
     #   - time-series: absent
+    #   - oracle-output: absent
     act_schema = create_timeseries_schema(Path('test/hubs/flu-metrocast'))
 
     # REF: columns: /.../flu-metrocast/target-data/time-series.csv
@@ -50,9 +52,10 @@ def test_flu_metrocast():
 
 def test_flusight_forecast_hub():
     # hub-config/target-data.json:
-    #   - observable_unit: top-level only
+    #   - observable_unit: top-level and oracle-output
     #   - versioned: top-level only, true
     #   - time-series: present. non_task_id_schema: present
+    #   - oracle-output: present. has_output_type_ids, observable_unit
     act_schema = create_timeseries_schema(Path('test/hubs/FluSight-forecast-hub'))
 
     # REF: columns: /.../FluSight-forecast-hub/target-data/time-series.csv
@@ -75,6 +78,7 @@ def test_variant_nowcast_hub():
     #   - observable_unit: top-level only
     #   - versioned: top-level only, true
     #   - time-series: absent
+    #   - oracle-output: absent
     act_schema = create_timeseries_schema(Path('test/hubs/variant-nowcast-hub'))
 
     # REF: columns: https://github.com/reichlab/variant-nowcast-hub/blob/main/target-data/time-series/as_of%3D2024-10-08/nowcast_date%3D2024-09-11/timeseries.parquet
@@ -96,6 +100,7 @@ def test_v6_target_dir_hub():
     #   - observable_unit: top-level only
     #   - versioned: top-level only, false
     #   - time-series: absent
+    #   - oracle-output: present. has_output_type_ids
     act_schema = create_timeseries_schema(Path('test/hubs/v6_target_dir'))
 
     # REF: columns: /.../v6_target_dir/target-data/time-series/target=wk%20flu%20hosp%20rate/part-0.parquet
@@ -110,11 +115,11 @@ def test_v6_target_dir_hub():
 
 
 def test_v6_target_file_hub():
-    # xx "target_end_date","target","location","observation"
     # hub-config/target-data.json:
     #   - observable_unit: top-level only
     #   - versioned: top-level only, false
     #   - time-series: absent
+    #   - oracle-output: present. has_output_type_ids
     act_schema = create_timeseries_schema(Path('test/hubs/v6_target_file'))
 
     # REF: columns: /.../v6_target_file/target-data/time-series.csv

@@ -1,0 +1,32 @@
+"target_end_date","location","target","oracle_value"
+2025-05-03,"Bronx","ILI ED visits",406
+2025-05-03,"Brooklyn","ILI ED visits",534
+2025-05-03,"Manhattan","ILI ED visits",278
+2025-05-03,"NYC","ILI ED visits",1689
+2025-05-03,"Queens","ILI ED visits",413
+2025-05-03,"Staten Island","ILI ED visits",20
+2025-05-03,"Unknown","ILI ED visits",38
+2025-05-03,"San Antonio","Flu ED visits pct",0.28
+2025-05-03,"Dallas","Flu ED visits pct",0.3
+2025-05-03,"El Paso","Flu ED visits pct",0.92
+2025-05-03,"Houston","Flu ED visits pct",0.51
+2025-05-03,"Austin","Flu ED visits pct",0.33
+2025-05-10,"Bronx","ILI ED visits",392
+2025-05-10,"Brooklyn","ILI ED visits",430
+2025-05-10,"Manhattan","ILI ED visits",221
+2025-05-10,"NYC","ILI ED visits",1489
+2025-05-10,"Queens","ILI ED visits",370
+2025-05-10,"Staten Island","ILI ED visits",29
+2025-05-10,"Unknown","ILI ED visits",47
+2025-05-10,"San Antonio","Flu ED visits pct",0.25
+2025-05-10,"Dallas","Flu ED visits pct",0.31
+2025-05-10,"El Paso","Flu ED visits pct",1.11
+2025-05-10,"Houston","Flu ED visits pct",0.52
+2025-05-10,"Austin","Flu ED visits pct",0.56
+2025-05-17,"Bronx","ILI ED visits",458
+2025-05-17,"Brooklyn","ILI ED visits",463
+2025-05-17,"Manhattan","ILI ED visits",263
+2025-05-17,"NYC","ILI ED visits",1724
+2025-05-17,"Queens","ILI ED visits",481
+2025-05-17,"Staten Island","ILI ED visits",22
+2025-05-17,"Unknown","ILI ED visits",37
