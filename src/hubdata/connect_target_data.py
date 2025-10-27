@@ -4,49 +4,36 @@ from pyarrow import dataset as ds
 from pyarrow import fs
 
 from hubdata import HubConnection, connect_hub
-from hubdata.create_target_data_schema import create_oracle_output_schema, create_timeseries_schema
+from hubdata.create_target_data_schema import TargetType, create_target_data_schema
 
 
-def connect_target_timeseries(hub_path: str | Path) -> ds.dataset:
+def connect_target_data(hub_path: str | Path, target_type: TargetType) -> ds.dataset:
     """
-    Top-level function for accessing the time-series data for the passed `hub_path`.
+    Top-level function for accessing the time-series target data or oracle-output target data for the passed `hub_path`.
 
     :param hub_path: str (for local file system hubs or cloud based ones) or Path (local file systems only) pointing to
-        a hub's root directory. it is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
+        a hub's root directory. It is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
         From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
         addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
         str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
+    :param target_type: a TargetType specifying the target data type
     :return: a `ds.dataset` for the passed `hub_path`. note that we return a dataset for the single file cases so that
-        the user can control when data is materialized into memory
+        the user can control when data is materialized into memory. The returned Dataset's schema will be as returned by
+        `create_timeseries_schema()`, which returns None if `hub_path` has no `hub-config/target-data.json` file,
+        causing the schema to be inferred from the data.
     :raise: RuntimeError if `hub_path` is invalid
-    :raise: RuntimeError if hub has no `hub-config/target-data.json` file
-    :raise: RuntimeError if hub has no time-series target data, i.e., no `target-data/time-series.csv`,
-        `target-data/time-series.parquet`, or `target-data/time-series/` files/dir
+    :raise: RuntimeError if hub has no time-series target data or oracle-output target data, i.e., no
+        `target-data/time-series.csv`, `target-data/time-series.parquet`, or `target-data/time-series/` files/dir (for
+        the time-series case), or `target-data/oracle-output.csv`, `target-data/oracle-output.parquet`, or
+        `target-data/oracle-output/` files/dir (for the oracle-output case)
     """
-    hub_conn = connect_hub(hub_path)  # raises RuntimeError if hub_path is invalid
-    found_file_info = _validate_target_data(hub_conn, True)  # raises RuntimeError if hub has no target data
-    return _create_dataset(hub_conn, found_file_info, True)
+    # raises RuntimeError if hub_path is invalid:
+    hub_conn = connect_hub(hub_path)
 
+    # raises RuntimeError if hub has no target data:
+    found_file_info = _validate_target_data(hub_conn, target_type == TargetType.TIME_SERIES)
 
-def connect_target_oracle_output(hub_path: str | Path) -> ds.dataset:
-    """
-    Top-level function for accessing the oracle-output data for the passed `hub_path`.
-
-    :param hub_path: str (for local file system hubs or cloud based ones) or Path (local file systems only) pointing to
-        a hub's root directory. it is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
-        From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
-        addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
-        str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
-    :return: a `ds.dataset` for the passed `hub_path`. note that we return a dataset for the single file cases so that
-        the user can control when data is materialized into memory
-    :raise: RuntimeError if `hub_path` is invalid
-    :raise: RuntimeError if hub has no `hub-config/target-data.json` file
-    :raise: RuntimeError if hub has no oracle-output target data, i.e., no `target-data/oracle-output.csv`,
-        `target-data/oracle-output.parquet`, or `target-data/oracle-output/` files/dir
-    """
-    hub_conn = connect_hub(hub_path)  # raises RuntimeError if hub_path is invalid
-    found_file_info = _validate_target_data(hub_conn, False)  # raises RuntimeError if hub has no target data
-    return _create_dataset(hub_conn, found_file_info, False)
+    return _create_dataset(hub_conn, found_file_info, target_type == TargetType.TIME_SERIES)
 
 
 def _validate_target_data(hub_conn: HubConnection, is_time_series: bool) -> fs.FileInfo:
@@ -92,7 +79,7 @@ def _create_dataset(hub_conn: HubConnection, found_file_info: fs.FileInfo, is_ti
         file_format, partitioning = found_file_info.extension, None
     else:  # it's `target-data/time-series/`
         file_format, partitioning = 'parquet', 'hive'
-    ts_schema = create_timeseries_schema(hub_conn.hub_path) if is_time_series \
-        else create_oracle_output_schema(hub_conn.hub_path)
+    ts_schema = create_target_data_schema(hub_conn.hub_path,
+                                          TargetType.TIME_SERIES if is_time_series else TargetType.ORACLE_OUTPUT)
     return ds.dataset(found_file_info.path, filesystem=hub_conn._filesystem, schema=ts_schema, format=file_format,
                       partitioning=partitioning, )

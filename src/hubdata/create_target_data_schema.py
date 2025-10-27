@@ -1,64 +1,60 @@
 import json
+from enum import Enum, auto
 from pathlib import Path
 
 import pyarrow as pa
+import structlog
 
 from hubdata import HubConnection, connect_hub
 from hubdata.create_hub_schema import _pa_type_for_hub_type
 
+logger = structlog.get_logger()
 
-def create_timeseries_schema(hub_path: str | Path) -> pa.schema:
+
+class TargetType(Enum):
+    TIME_SERIES = auto()  # indicates time-series target data is to be used
+    ORACLE_OUTPUT = auto()  # "" oracle-output ""
+
+
+def create_target_data_schema(hub_path: str | Path, target_type: TargetType) -> pa.Schema | None:
     """
-    Top-level function for creating a time-series schema for the passed `hub_path`.
+    Top-level function for creating a time-series target schema or oracle-output target schema for the passed
+    `hub_path`.
 
     :param hub_path: str (for local file system hubs or cloud based ones) or Path (local file systems only) pointing to
-        a hub's root directory. it is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
+        a hub's root directory. It is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
         From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
         addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
         str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
-    :return: a `pyarrow.Schema` for the passed `hub_path`
-    :raise: RuntimeError if `hub_path` has no `hub-config/target-data.json` file
+    :param target_type: a TargetType specifying the target data schema type
+    :return: a `pyarrow.Schema` for the passed `hub_path` if a `hub-config/target-data.json` file is present. otherwise
+        returns None
+    :raise: RuntimeError if `hub_path` is invalid
     """
     hub_conn = connect_hub(hub_path)
     target_data = _target_data_json(hub_conn)  # try to open hub-config/target-data.json
-    col_name_to_pa_type = _col_name_to_pa_type_for_target_data(hub_conn.schema, target_data, True)
-    return pa.schema(col_name_to_pa_type)
+    return pa.schema(_col_name_to_pa_type_for_target_data(hub_conn.schema, target_data,
+                                                          target_type == TargetType.TIME_SERIES)) \
+        if target_data is not None else None
 
 
-def create_oracle_output_schema(hub_path: str | Path) -> pa.schema:
+def _target_data_json(hub_conn: HubConnection) -> dict | None:
     """
-    Top-level function for creating a oracle-output schema for the passed `hub_path`.
-
-    :param hub_path: str (for local file system hubs or cloud based ones) or Path (local file systems only) pointing to
-        a hub's root directory. it is passed to https://arrow.apache.org/docs/python/generated/pyarrow.fs.FileSystem.html#pyarrow.fs.FileSystem.from_uri
-        From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
-        addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
-        str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
-    :return: a `pyarrow.Schema` for the passed `hub_path`
-    :raise: RuntimeError if `hub_path` has no `hub-config/target-data.json` file
-    """
-    hub_conn = connect_hub(hub_path)
-    target_data = _target_data_json(hub_conn)  # try to open hub-config/target-data.json
-    col_name_to_pa_type = _col_name_to_pa_type_for_target_data(hub_conn.schema, target_data, False)
-    return pa.schema(col_name_to_pa_type)
-
-
-def _target_data_json(hub_conn: HubConnection) -> dict:
-    """
-    Helper that returns the contents of `hub_connection`'s hub-config/target-data.json file.
+    Helper that returns the contents of `hub_connection`'s hub-config/target-data.json file if found. Returns None
+    otherwise.
 
     :param hub_conn: the hub's HubConnection
-    :return: hub-config/target-data.json file as a dict
-    :raise: RuntimeError if `hub_path` has no `hub-config/target-data.json` file
+    :return: hub-config/target-data.json file as a dict, or None if not found
     """
     try:
         with (hub_conn._filesystem.open_input_file(f'{hub_conn._filesystem_path}/hub-config/target-data.json') as fp):
             return json.load(fp)
-    except Exception as ex:
-        raise RuntimeError(f'target-data.json not found. hubverse schema v6 is required: {ex}')
+    except Exception:
+        logger.warn('target-data.json not found. using inferred schema from data')
+        return None
 
 
-def _col_name_to_pa_type_for_target_data(hub_schema: pa.schema, target_data: dict,
+def _col_name_to_pa_type_for_target_data(hub_schema: pa.Schema, target_data: dict,
                                          is_time_series: bool) -> dict[str, pa.DataType]:
     """
     Helper that returns a mapping of `hub-config/target-data.json` column names to pa.DataTypes.

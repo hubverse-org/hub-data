@@ -6,7 +6,7 @@ import pyarrow as pa
 
 
 def create_hub_schema(tasks: dict, output_type_id_datatype: str = 'from_config',
-                      partitions: tuple[tuple[str, pa.DataType]] | None = (('model_id', pa.string()),)) -> pa.schema:
+                      partitions: tuple[tuple[str, pa.DataType]] | None = (('model_id', pa.string()),)) -> pa.Schema:
     """
     Top-level function for creating a schema for the passed `tasks`.
 
