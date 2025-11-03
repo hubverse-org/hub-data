@@ -71,7 +71,7 @@ class HubConnection:
 
 
     def get_dataset(self, exclude_invalid_files: bool = False,
-                    ignore_files: Iterable[str] = ('README', '.DS_Store')) -> ds:
+                    ignore_files: Iterable[str] = ('README', '.DS_Store')) -> ds.Dataset:
         """
         Main entry point for getting a pyarrow dataset to work with. Prints a warning about any files that were skipped
         during dataset file discovery.

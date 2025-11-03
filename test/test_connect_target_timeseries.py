@@ -8,7 +8,8 @@ import pyarrow.csv as csv
 import pyarrow.parquet as parquet
 import pytest
 
-from hubdata.connect_target_data import connect_target_data
+from hubdata import HubConnection
+from hubdata.connect_target_data import TargetDataConnection, connect_target_data
 from hubdata.create_target_data_schema import TargetType, create_target_data_schema
 
 
@@ -17,7 +18,7 @@ def test_no_target_data_json_file(tmp_path):
     tmp_path = Path(tmp_path)
     shutil.copytree('test/hubs/v6_target_file', tmp_path, dirs_exist_ok=True)
     os.remove(tmp_path / 'hub-config/target-data.json')
-    ts_ds = connect_target_data(tmp_path, TargetType.TIME_SERIES)
+    ts_ds = connect_target_data(tmp_path, TargetType.TIME_SERIES).get_dataset()
     exp_schema = pa.schema([('target_end_date', pa.date32()),  # schema directly from data
                             ('target', pa.string()),
                             ('location', pa.string()),
@@ -48,7 +49,21 @@ def test_more_than_one_time_series_data(tmp_path):
 
 def test_flu_metrocast():
     hub_path = Path('test/hubs/flu-metrocast')  # target-data/time-series.csv
-    ts_ds = connect_target_data(hub_path, TargetType.TIME_SERIES)
+    td_conn = connect_target_data(hub_path, TargetType.TIME_SERIES)
+
+    # test TargetDataConnection. we only test two cases: is_file == True (this test) and is_file == False
+    # (v6_target_dir below)
+    assert isinstance(td_conn, TargetDataConnection)
+    assert td_conn.target_type == TargetType.TIME_SERIES
+    assert isinstance(td_conn.hub_conn, HubConnection)
+    assert Path(td_conn.found_file_info.path) == Path('test/hubs/flu-metrocast/target-data/time-series.csv').absolute()
+    assert td_conn.found_file_info.is_file is True
+    assert td_conn.found_file_info.extension == 'csv'
+    assert td_conn.found_file_info.base_name == 'time-series.csv'
+    assert td_conn.schema == create_target_data_schema(hub_path, TargetType.TIME_SERIES)
+
+    # test get_dataset()
+    ts_ds = td_conn.get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 1
     assert ts_ds.to_table().column_names == ['target', 'target_end_date', 'location', 'as_of', 'observation']
@@ -61,7 +76,21 @@ def test_v6_target_dir():
     # target-data/time-series/target=wk%20flu%20hosp%20rate/part-0.parquet  # 33 rows
     # target-data/time-series/target=wk%20inc%20flu%20hosp/part-0.parquet  # ""
     hub_path = Path('test/hubs/v6_target_dir')
-    ts_ds = connect_target_data(hub_path, TargetType.TIME_SERIES)
+    td_conn = connect_target_data(hub_path, TargetType.TIME_SERIES)
+
+    # test TargetDataConnection. we only test two cases: is_file == True (flu-metrocast above) and is_file == False
+    # (this test)
+    assert isinstance(td_conn, TargetDataConnection)
+    assert td_conn.target_type == TargetType.TIME_SERIES
+    assert isinstance(td_conn.hub_conn, HubConnection)
+    assert Path(td_conn.found_file_info.path) == Path('test/hubs/v6_target_dir/target-data/time-series').absolute()
+    assert td_conn.found_file_info.is_file is False
+    assert td_conn.found_file_info.extension == ''
+    assert td_conn.found_file_info.base_name == ''
+    assert td_conn.schema == create_target_data_schema(hub_path, TargetType.TIME_SERIES)
+
+    # test get_dataset()
+    ts_ds = td_conn.get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 2
     assert ts_ds.to_table().column_names == ['target_end_date', 'target', 'location', 'observation']
@@ -72,7 +101,7 @@ def test_v6_target_dir():
 
 def test_v6_target_file_hub():
     hub_path = Path('test/hubs/v6_target_file')  # target-data/time-series.csv
-    ts_ds = connect_target_data(hub_path, TargetType.TIME_SERIES)
+    ts_ds = connect_target_data(hub_path, TargetType.TIME_SERIES).get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 1
     assert ts_ds.to_table().column_names == ['target_end_date', 'target', 'location', 'observation']
@@ -88,7 +117,7 @@ def test_v6_target_file_parquet(tmp_path):
     parquet.write_table(pa_table, tmp_path / 'target-data/time-series.parquet')
     os.remove(tmp_path / 'target-data/time-series.csv')  # o/w invalid
 
-    ts_ds = connect_target_data(tmp_path, TargetType.TIME_SERIES)
+    ts_ds = connect_target_data(tmp_path, TargetType.TIME_SERIES).get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 1
     assert ts_ds.to_table().column_names == ['target_end_date', 'target', 'location', 'observation']

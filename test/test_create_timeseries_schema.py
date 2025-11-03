@@ -6,7 +6,7 @@ from hubdata.create_target_data_schema import TargetType, create_target_data_sch
 
 
 def test_no_target_data_json_file():
-    # make sure `create_timeseries_schema()` does not raise an error if no hub-config/target-data.json is present
+    # make sure `create_target_data_schema()` does not raise an error if no hub-config/target-data.json is present
     assert create_target_data_schema(Path('test/hubs/v4_flusight'), TargetType.TIME_SERIES) is None
 
 

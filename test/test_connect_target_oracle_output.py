@@ -8,6 +8,7 @@ import pyarrow.csv as csv
 import pyarrow.parquet as parquet
 import pytest
 
+from hubdata import HubConnection
 from hubdata.connect_target_data import connect_target_data
 from hubdata.create_target_data_schema import TargetType, create_target_data_schema
 
@@ -17,7 +18,7 @@ def test_no_target_data_json_file(tmp_path):
     tmp_path = Path(tmp_path)
     shutil.copytree('test/hubs/v6_target_file', tmp_path, dirs_exist_ok=True)
     os.remove(tmp_path / 'hub-config/target-data.json')
-    ts_ds = connect_target_data(tmp_path, TargetType.ORACLE_OUTPUT)
+    ts_ds = connect_target_data(tmp_path, TargetType.ORACLE_OUTPUT).get_dataset()
     exp_schema = pa.schema([('location', pa.string()),  # schema directly from data
                             ('target_end_date', pa.date32()),
                             ('target', pa.string()),
@@ -52,7 +53,21 @@ def test_more_than_one_oracle_output_data(tmp_path):
 
 def test_flu_metrocast():
     hub_path = Path('test/hubs/flu-metrocast')  # target-data/oracle-output.csv
-    ts_ds = connect_target_data(hub_path, TargetType.ORACLE_OUTPUT)
+    td_conn = connect_target_data(hub_path, TargetType.ORACLE_OUTPUT)
+
+    # test TargetDataConnection. we only test two cases: is_file == True (this test) and is_file == False
+    # (v6_target_dir below)
+    assert td_conn.target_type == TargetType.ORACLE_OUTPUT
+    assert isinstance(td_conn.hub_conn, HubConnection)
+    assert (Path(td_conn.found_file_info.path) ==
+            Path('test/hubs/flu-metrocast/target-data/oracle-output.csv').absolute())
+    assert td_conn.found_file_info.is_file is True
+    assert td_conn.found_file_info.extension == 'csv'
+    assert td_conn.found_file_info.base_name == 'oracle-output.csv'
+    assert td_conn.schema == create_target_data_schema(hub_path, TargetType.ORACLE_OUTPUT)
+
+    # test get_dataset()
+    ts_ds = td_conn.get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 1
     assert ts_ds.to_table().column_names == ['target', 'target_end_date', 'location', 'oracle_value']
@@ -68,7 +83,20 @@ def test_v6_target_dir():
     # target-data/oracle-output/output_type=quantile/part-0.parquet  # 33 rows
     # target-data/oracle-output/output_type=sample/part-0.parquet  # 33 rows
     hub_path = Path('test/hubs/v6_target_dir')
-    ts_ds = connect_target_data(hub_path, TargetType.ORACLE_OUTPUT)
+    td_conn = connect_target_data(hub_path, TargetType.ORACLE_OUTPUT)
+
+    # test TargetDataConnection. we only test two cases: is_file == True (flu-metrocast above) and is_file == False
+    # (this test)
+    assert td_conn.target_type == TargetType.ORACLE_OUTPUT
+    assert isinstance(td_conn.hub_conn, HubConnection)
+    assert (Path(td_conn.found_file_info.path) == Path('test/hubs/v6_target_dir/target-data/oracle-output').absolute())
+    assert td_conn.found_file_info.is_file is False
+    assert td_conn.found_file_info.extension == ''
+    assert td_conn.found_file_info.base_name == ''
+    assert td_conn.schema == create_target_data_schema(hub_path, TargetType.ORACLE_OUTPUT)
+
+    # test get_dataset()
+    ts_ds = td_conn.get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 5
     assert ts_ds.to_table().column_names == ['target_end_date', 'target', 'location', 'output_type', 'output_type_id',
@@ -81,7 +109,7 @@ def test_v6_target_dir():
 
 def test_v6_target_file_hub():
     hub_path = Path('test/hubs/v6_target_file')  # target-data/oracle-output.csv
-    ts_ds = connect_target_data(hub_path, TargetType.ORACLE_OUTPUT)
+    ts_ds = connect_target_data(hub_path, TargetType.ORACLE_OUTPUT).get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 1
     assert ts_ds.to_table().column_names == ['target_end_date', 'target', 'location', 'output_type', 'output_type_id',
@@ -99,7 +127,7 @@ def test_v6_target_file_parquet(tmp_path):
     parquet.write_table(pa_table, tmp_path / 'target-data/oracle-output.parquet')
     os.remove(tmp_path / 'target-data/oracle-output.csv')  # o/w invalid
 
-    ts_ds = connect_target_data(tmp_path, TargetType.ORACLE_OUTPUT)
+    ts_ds = connect_target_data(tmp_path, TargetType.ORACLE_OUTPUT).get_dataset()
     assert isinstance(ts_ds, pa.dataset.FileSystemDataset)
     assert len(ts_ds.files) == 1
     assert ts_ds.to_table().column_names == ['target_end_date', 'target', 'location', 'output_type', 'output_type_id',

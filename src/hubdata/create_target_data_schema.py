@@ -5,7 +5,7 @@ from pathlib import Path
 import pyarrow as pa
 import structlog
 
-from hubdata import HubConnection, connect_hub
+from hubdata.connect_hub import HubConnection, connect_hub
 from hubdata.create_hub_schema import _pa_type_for_hub_type
 
 logger = structlog.get_logger()
