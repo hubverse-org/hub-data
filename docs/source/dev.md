@@ -3,8 +3,6 @@
 Following are some useful local commands for testing and trying out the package's features. The package follows the [Hubverse Python package standard](https://docs.hubverse.io/en/latest/developer/python.html), and in particular uses [uv](https://docs.astral.sh/uv/) for managing Python versions, virtual environments, and dependencies.
 
 > Note: All shell examples assume you're using [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)), and that you first `cd` into this repo's root directory (e.g., `cd /<path_to_repos>/hub-data/`).
->
-> Note: The Python-based directions below use [uv](https://docs.astral.sh/uv/) for managing Python versions, virtual environments, and dependencies, but if you already have a preferred Python toolset, that should work too.
 
 Don't forget to:
 

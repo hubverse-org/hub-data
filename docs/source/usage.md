@@ -2,9 +2,11 @@
 
 This page contains information about using the hubdata API.
 
-## Basic usage
+> Note: The examples below assume you've configured your machine for managing Python versions, virtual environments, and dependencies using your preferred Python toolset, e.g., [venv](https://docs.python.org/3/library/venv.html), [uv](https://docs.astral.sh/uv/), etc.
 
 > Note: This package is based on the [python version](https://arrow.apache.org/docs/python/index.html) of Apache's [Arrow library](https://arrow.apache.org/docs/index.html).
+
+## Basic usage
 
 1. Use `connect_hub()` to get a `HubConnection` object for a hub directory.
 2. Call `HubConnection.get_dataset()` to get a pyarrow [Dataset](https://arrow.apache.org/docs/python/generated/pyarrow.dataset.Dataset.html) extracted from the hub's model output directory.
@@ -15,11 +17,9 @@ For example, here is code using native pyarrow commands to count the number of r
 First, start a python interpreter with the required libraries:
 
 > Note: All shell examples assume you're using [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)), and that you first `cd` into this repo's root directory, e.g., `cd /<path_to_repos>/hub-data/` .
->
-> Note: The Python-based directions below use [uv](https://docs.astral.sh/uv/) for managing Python versions, virtual environments, and dependencies, but if you already have a preferred Python toolset, that should work too.
 
 ```bash
-uv run python3
+python3
 ```
 
 Then run the following Python code. (We've included Python output in comments.)
@@ -93,13 +93,10 @@ print(pa_table.shape)
 
 ## Working with a cloud-based hub
 
-This package supports connecting to cloud-based hubs (primarily AWS S3 for the hubverse) via pyarrow's [abstract filesystem interface](https://arrow.apache.org/docs/python/filesystems.html), which works with both local file systems and those on the cloud. Here's an example of accessing the hubverse bucket
-**example-complex-forecast-hub** (arn:aws:s3:::example-complex-forecast-hub) via the S3 URI **s3:
-//example-complex-forecast-hub/**. For example, continuing the above Python session:
+This package supports connecting to cloud-based hubs (primarily AWS S3 for the hubverse) via pyarrow's [abstract filesystem interface](https://arrow.apache.org/docs/python/filesystems.html), which works with both local file systems and those on the cloud. Here's an example of accessing the cloud-enabled [example-complex-forecast-hub](https://github.com/hubverse-org/example-complex-forecast-hub)'s S3 bucket via the S3 URI `s3://example-complex-forecast-hub/`. For example, continuing the above Python session:
 
-> Note: An [S3 URI](https://repost.aws/questions/QUFXlwQxxJQQyg9PMn2b6nTg/what-is-s3-uri-in-simple-storage-service) (Uniform Resource Identifier) for Amazon S3 has the format
-**s3://\<bucket-name\>/\<key-name\>**. It uniquely identifies an object stored in an S3 bucket. For example, **s3:
-//my-bucket/data.txt** refers to a file named **data.txt** within the bucket named **my-bucket**.
+> Note: An [S3 URI](https://repost.aws/questions/QUFXlwQxxJQQyg9PMn2b6nTg/what-is-s3-uri-in-simple-storage-service) (Uniform Resource Identifier) for Amazon S3 has the format `s3://\<bucket-name\>/\<key-name\>`. It uniquely identifies an object stored in an S3 bucket. For example, `s3:
+//my-bucket/data.txt` refers to a file named `data.txt` within the bucket named `my-bucket`.
 
 ```python
 hub_connection = connect_hub('s3://example-complex-forecast-hub/')
@@ -111,10 +108,7 @@ print(hub_connection.to_table().shape)
 
 ## Working with data outside pyarrow: A Polars example
 
-As mentioned above, once you have a [pyarrow Table](https://arrow.apache.org/docs/python/generated/pyarrow.Table.html) you can convert it to work with dataframe packages like [pandas](https://pandas.pydata.org/) and [Polars](https://docs.pola.rs/). Here we give an example of using the
-**flu-metrocast** test hub.
-
-First start a python session, installing the Polars package on the fly using `uv run`'s [--with argument](https://docs.astral.sh/uv/concepts/projects/run/#requesting-additional-dependencies):
+As mentioned above, once you have a [pyarrow Table](https://arrow.apache.org/docs/python/generated/pyarrow.Table.html) you can convert it to work with dataframe packages like [pandas](https://pandas.pydata.org/) and [Polars](https://docs.pola.rs/). Here we give an example of using the [flu-metrocast test hub](https://github.com/hubverse-org/hub-data/tree/main/test/hubs/flu-metrocast). For simplicity, we use [uv](https://docs.astral.sh/uv/) in this example, which allows us to start a python session that installs the Polars package on the fly using `uv run`'s [--with argument](https://docs.astral.sh/uv/concepts/projects/run/#requesting-additional-dependencies):
 
 ```bash
 uv run --with polars python3
@@ -187,4 +181,131 @@ pl_df
 # │ 2025-06-14      ┆ 27    │
 # │ 2025-06-21      ┆ 9     │
 # └─────────────────┴───────┘
+```
+
+## Working with target data
+
+All of the above examples were concerned with [model output data](https://docs.hubverse.io/en/latest/user-guide/model-output.html). In this section we focus on working with [target (observed) data](https://docs.hubverse.io/en/latest/user-guide/target-data.html), both time-series and oracle-output forms. The API for both is similar to that of the model output data API, with analogous `create_target_data_schema()` and `connect_target_data()` functions. Both accept a `target_type` enumeration argument (either `TargetType.TIME_SERIES` or `TargetType.ORACLE_OUTPUT`) that indicates which form of target data to work with.
+
+Working again with the [example-complex-forecast-hub](https://github.com/hubverse-org/example-complex-forecast-hub), let's first use the CLI to get an overview of its `time-series` and `oracle-output` data:
+
+```bash
+hubdata time-series s3://example-complex-forecast-hub/
+╭─ target data ──────────────────────────╮
+│                                        │
+│  hub_path:                             │
+│  - s3://example-complex-forecast-hub/  │
+│                                        │
+│  target type:                          │
+│  - time-series                         │
+│                                        │
+│  schema:                               │
+│  - location: string                    │
+│  - observation: double                 │
+│  - target: string                      │
+│  - target_end_date: date32             │
+│                                        │
+│  dataset:                              │
+│  - location: time-series.csv (file)    │
+│  - files: 1                            │
+│  - type: csv                           │
+│                                        │
+╰────────────────────────────── hubdata ─╯
+
+hubdata oracle-output s3://example-complex-forecast-hub/
+╭─ target data ──────────────────────────╮
+│                                        │
+│  hub_path:                             │
+│  - s3://example-complex-forecast-hub/  │
+│                                        │
+│  target type:                          │
+│  - oracle-output                       │
+│                                        │
+│  schema:                               │
+│  - location: string                    │
+│  - oracle_value: double                │
+│  - output_type: string                 │
+│  - output_type_id: string              │
+│  - target: string                      │
+│  - target_end_date: date32             │
+│                                        │
+│  dataset:                              │
+│  - location: oracle-output.csv (file)  │
+│  - files: 1                            │
+│  - type: csv                           │
+│                                        │
+╰────────────────────────────── hubdata ─╯
+```
+
+Now let's try out the API.
+
+```python
+import pyarrow.compute as pc
+from hubdata.connect_target_data import connect_target_data
+from hubdata.create_target_data_schema import TargetType
+
+
+# first we'll work with time-series target data - corresponds to
+# https://github.com/hubverse-org/example-complex-forecast-hub/blob/main/target-data/time-series.csv
+td_conn = connect_target_data('s3://example-complex-forecast-hub/', TargetType.TIME_SERIES)
+
+# get the schema for the time-series data. this is set for you via `create_target_data_schema()`, which, for this hub,
+# the program was able to deterministically figure out via the file
+# https://github.com/hubverse-org/example-complex-forecast-hub/blob/main/hub-config/target-data.json
+td_conn.schema
+# target_end_date: date32[day]
+# target: string
+# location: string
+# observation: double
+
+# get a Dataset for the data
+ts_ds = td_conn.get_dataset()
+ts_ds.count_rows()
+# 20510
+
+# load all data into memory as a pyarrow Table
+pa_table = ts_ds.to_table()
+pa_table.shape
+# (20510, 4)
+
+pa_table
+# pyarrow.Table
+# target_end_date: date32[day]
+# target: string
+# location: string
+# observation: double
+# ----
+# target_end_date: [[2020-01-11,2020-01-11,2020-01-11,2020-01-11,2020-01-11,...,2023-11-11,2023-11-11,2023-11-11,2023-11-11,2023-11-11]]
+# target: [["wk inc flu hosp","wk inc flu hosp","wk inc flu hosp","wk inc flu hosp","wk inc flu hosp",...,"wk flu hosp rate","wk flu hosp rate","wk flu hosp rate","wk flu hosp rate","wk flu hosp rate"]]
+# location: [["01","15","18","27","30",...,"50","53","55","54","56"]]
+# observation: [[0,0,0,0,0,...,0.463743024532006,0.25853708856730895,0.3225246824744501,0.6760650983083161,1.2098523461629533]]
+
+pc.unique(pa_table['location']).to_pylist()
+# ['01', '15', ..., '49']
+
+pc.unique(pa_table['target']).to_pylist()
+# ['wk inc flu hosp', 'wk flu hosp rate']
+
+# working with oracle-output target data is very similar - corresponds to
+# https://github.com/hubverse-org/example-complex-forecast-hub/blob/main/target-data/oracle-output.csv
+td_conn = connect_target_data('s3://example-complex-forecast-hub/', TargetType.ORACLE_OUTPUT)
+
+td_conn.schema
+# target_end_date: date32[day]
+# target: string
+# location: string
+# output_type: string
+# output_type_id: string
+# oracle_value: double
+
+ts_ds = td_conn.get_dataset()
+ts_ds.count_rows()
+# 200340
+
+pa_table = ts_ds.to_table()  # load all data into memory
+pa_table.shape
+# (200340, 6)
+
+pc.unique(pa_table['output_type']).to_pylist()
+# ['quantile', 'mean', 'median', 'sample', 'pmf', 'cdf']
 ```

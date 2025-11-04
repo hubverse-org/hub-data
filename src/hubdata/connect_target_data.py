@@ -17,7 +17,7 @@ class TargetDataConnection:
     - hub_conn: a HubConnection for the passed `hub_path`
     - found_file_info: a fs.FileInfo that's the target data source as returned by `_validate_target_data()`
     - schema: the pa.Schema for `get_dataset()` as returned by `create_target_data_schema()`. note that it is None if
-        the schema is to be inferred from data
+    the schema is to be inferred from data
     """
 
 
@@ -108,11 +108,12 @@ def connect_target_data(hub_path: str | Path, target_type: TargetType) -> Target
         addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
         str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
     :param target_type: a TargetType specifying the target data type
+
     :return a TargetDataConnection
     :raise: RuntimeError if `hub_path` is invalid
     :raise: RuntimeError if hub has no time-series target data or oracle-output target data, i.e., no
-        `target-data/time-series.csv`, `target-data/time-series.parquet`, or `target-data/time-series/` files/dir (for
-        the time-series case), or `target-data/oracle-output.csv`, `target-data/oracle-output.parquet`, or
-        `target-data/oracle-output/` files/dir (for the oracle-output case)
+    `target-data/time-series.csv`, `target-data/time-series.parquet`, or `target-data/time-series/` files/dir (for
+    the time-series case), or `target-data/oracle-output.csv`, `target-data/oracle-output.parquet`, or
+    `target-data/oracle-output/` files/dir (for the oracle-output case)
     """
     return TargetDataConnection(hub_path, target_type)
