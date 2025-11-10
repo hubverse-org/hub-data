@@ -70,7 +70,7 @@ class TargetDataConnection:
         return found_file_infos[0]
 
 
-    def get_dataset(self):
+    def get_dataset(self) -> ds.Dataset:
         """
         Main entry point for getting a pyarrow dataset to work with.
 
@@ -84,7 +84,7 @@ class TargetDataConnection:
         else:  # it's `target-data/time-series/`
             file_format, partitioning = 'parquet', 'hive'
         return ds.dataset(self.found_file_info.path, filesystem=self.hub_conn._filesystem, schema=self.schema,
-                          format=file_format, partitioning=partitioning, )
+                          format=file_format, partitioning=partitioning)
 
 
     def to_table(self, *args, **kwargs) -> pa.Table:

@@ -2,26 +2,18 @@
 
 The package provides a command-line interface (CLI) called `hubdata` which provides the following subcommands:
 
-> Note: This package is based on the [python version](https://arrow.apache.org/docs/python/index.html) of Apache's [Arrow library](https://arrow.apache.org/docs/index.html).
-
 - `schema`: Print a hub's schema, i.e., the columns and datatypes that are inferred from the hub's [tasks.json](https://docs.hubverse.io/en/latest/user-guide/hub-config.html) file.
 - `dataset`: Print summary information about the data in a hub's [model output directory](https://docs.hubverse.io/en/latest/user-guide/model-output.html). It also includes the same information as the `schema` subcommand. Note that this command can take some time to run as it must scan all data files in the hub.
 - `time-series`: Print a hub's [time series target data](https://docs.hubverse.io/en/latest/user-guide/target-data.html#time-series) information, including its schema.
 - `oracle-output`: Print a hub's [oracle output target data](https://docs.hubverse.io/en/latest/user-guide/target-data.html#oracle-output) information, including its schema.
 
-## Getting help with the CLI
+> Note: This package is based on the [python version](https://arrow.apache.org/docs/python/index.html) of Apache's [Arrow library](https://arrow.apache.org/docs/index.html).
 
-To see command-line help, you can run the `hubdata` command with the `--help` option, with or without a subcommand. For example:
-
-> Note: All shell examples assume you're using [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)), and that you first `cd` into this repo's root directory, e.g., `cd /<path_to_repos>/hub-data/` .
-
-```bash
-hubdata --help
-hubdata schema --help
-hubdata dataset --help
-```
+> Note: To see command-line help, you can run the `hubdata` command with the `--help` option, with or without a subcommand. For example, `hubdata --help` or `hubdata dataset --help`.
 
 ## Show the schema of a test hub (the `schema` subcommand)
+
+> Note: All shell examples assume you're using [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)), and that you first `cd` into this repo's root directory, e.g., `cd /<path_to_repos>/hub-data/` .
 
 Here's an example of running the `schema` subcommand on the [flu-metrocast test hub](https://github.com/hubverse-org/hub-data/tree/main/test/hubs/flu-metrocast) included in this package. We use the `pwd` shell command to create the absolute path that the app requires.
 
