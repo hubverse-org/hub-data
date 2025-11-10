@@ -4,6 +4,20 @@ All notable changes to `hubdata` are documented here.
 
 ## Unreleased
 
+## 0.2.0
+
+### Added
+
+- Added support for [Target (Observed) Data](https://docs.hubverse.io/en/latest/user-guide/target-data.html) via the two new API functions `create_target_data_schema()` and `connect_target_data()`, along with CLI support via two new subcommands (`time-series` and `oracle-output`).
+
+### Changed
+
+- N/A
+
+### Internal
+
+- N/A
+
 ## 0.1.5
 
 ### Added

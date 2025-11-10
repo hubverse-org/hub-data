@@ -6,9 +6,9 @@ import pyarrow as pa
 
 
 def create_hub_schema(tasks: dict, output_type_id_datatype: str = 'from_config',
-                      partitions: tuple[tuple[str, pa.DataType]] | None = (('model_id', pa.string()),)) -> pa.schema:
+                      partitions: tuple[tuple[str, pa.DataType]] | None = (('model_id', pa.string()),)) -> pa.Schema:
     """
-    Top-level function for creating a schema for the passed `HubConnection`.
+    Top-level function for creating a schema for the passed `tasks`.
 
     :param tasks: a hub's `tasks.json` contents from which to create a schema - see `HubConnection.tasks`
     :param output_type_id_datatype: a string that's one of `"from_config"`, `"auto"`, `"character"`, `"double"`,

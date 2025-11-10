@@ -1,0 +1,11 @@
+{
+  "schema_version": "https://raw.githubusercontent.com/hubverse-org/schemas/main/v6.0.0/target-data-schema.json",
+  "observable_unit": [
+    "location",
+    "clade",
+    "target_date",
+    "nowcast_date"
+  ],
+  "date_col": "target_date",
+  "versioned": true
+}

@@ -1,0 +1,101 @@
+as_of,location,target,target_end_date,observation
+2025-02-03,Bronx,ILI ED visits,2025-02-01,1543
+2025-02-03,Brooklyn,ILI ED visits,2025-02-01,1750
+2025-02-03,Manhattan,ILI ED visits,2025-02-01,832
+2025-02-03,NYC,ILI ED visits,2025-02-01,6004
+2025-02-03,Queens,ILI ED visits,2025-02-01,1494
+2025-02-03,Staten Island,ILI ED visits,2025-02-01,174
+2025-02-03,Unknown,ILI ED visits,2025-02-01,211
+2025-02-11,Bronx,ILI ED visits,2025-02-01,1544
+2025-02-11,Brooklyn,ILI ED visits,2025-02-01,1752
+2025-02-11,Manhattan,ILI ED visits,2025-02-01,832
+2025-02-11,NYC,ILI ED visits,2025-02-01,6008
+2025-02-11,Queens,ILI ED visits,2025-02-01,1495
+2025-02-11,Staten Island,ILI ED visits,2025-02-01,174
+2025-02-11,Unknown,ILI ED visits,2025-02-01,211
+2025-02-11,Bronx,ILI ED visits,2025-02-08,1382
+2025-02-11,Brooklyn,ILI ED visits,2025-02-08,1538
+2025-02-11,Manhattan,ILI ED visits,2025-02-08,782
+2025-02-11,NYC,ILI ED visits,2025-02-08,5348
+2025-02-11,Queens,ILI ED visits,2025-02-08,1370
+2025-02-11,Staten Island,ILI ED visits,2025-02-08,126
+2025-02-11,Unknown,ILI ED visits,2025-02-08,150
+2025-02-12,San Antonio,Flu ED visits pct,2025-02-01,11.57
+2025-02-12,Dallas,Flu ED visits pct,2025-02-01,12.59
+2025-02-12,El Paso,Flu ED visits pct,2025-02-01,6.59
+2025-02-12,Houston,Flu ED visits pct,2025-02-01,5.8
+2025-02-12,Austin,Flu ED visits pct,2025-02-01,10.83
+2025-02-18,San Antonio,Flu ED visits pct,2025-02-01,11.64
+2025-02-18,Dallas,Flu ED visits pct,2025-02-01,12.65
+2025-02-18,El Paso,Flu ED visits pct,2025-02-01,6.75
+2025-02-18,Houston,Flu ED visits pct,2025-02-01,5.85
+2025-02-18,Austin,Flu ED visits pct,2025-02-01,10.84
+2025-02-18,Bronx,ILI ED visits,2025-02-01,1544
+2025-02-18,Brooklyn,ILI ED visits,2025-02-01,1752
+2025-02-18,Manhattan,ILI ED visits,2025-02-01,832
+2025-02-18,NYC,ILI ED visits,2025-02-01,6008
+2025-02-18,Queens,ILI ED visits,2025-02-01,1495
+2025-02-18,Staten Island,ILI ED visits,2025-02-01,174
+2025-02-18,Unknown,ILI ED visits,2025-02-01,211
+2025-02-18,San Antonio,Flu ED visits pct,2025-02-08,8.76
+2025-02-18,Dallas,Flu ED visits pct,2025-02-08,9.68
+2025-02-18,El Paso,Flu ED visits pct,2025-02-08,6.19
+2025-02-18,Houston,Flu ED visits pct,2025-02-08,5.21
+2025-02-18,Austin,Flu ED visits pct,2025-02-08,7.94
+2025-02-18,Bronx,ILI ED visits,2025-02-08,1381
+2025-02-18,Brooklyn,ILI ED visits,2025-02-08,1539
+2025-02-18,Manhattan,ILI ED visits,2025-02-08,782
+2025-02-18,NYC,ILI ED visits,2025-02-08,5349
+2025-02-18,Queens,ILI ED visits,2025-02-08,1371
+2025-02-18,Staten Island,ILI ED visits,2025-02-08,126
+2025-02-18,Unknown,ILI ED visits,2025-02-08,150
+2025-02-18,Bronx,ILI ED visits,2025-02-15,1132
+2025-02-18,Brooklyn,ILI ED visits,2025-02-15,1283
+2025-02-18,Manhattan,ILI ED visits,2025-02-15,644
+2025-02-18,NYC,ILI ED visits,2025-02-15,4413
+2025-02-18,Queens,ILI ED visits,2025-02-15,1105
+2025-02-18,Staten Island,ILI ED visits,2025-02-15,107
+2025-02-18,Unknown,ILI ED visits,2025-02-15,142
+2025-02-25,San Antonio,Flu ED visits pct,2025-02-01,11.67
+2025-02-25,Dallas,Flu ED visits pct,2025-02-01,12.65
+2025-02-25,El Paso,Flu ED visits pct,2025-02-01,6.81
+2025-02-25,Houston,Flu ED visits pct,2025-02-01,5.87
+2025-02-25,Austin,Flu ED visits pct,2025-02-01,10.85
+2025-02-25,Bronx,ILI ED visits,2025-02-01,1544
+2025-02-25,Brooklyn,ILI ED visits,2025-02-01,1752
+2025-02-25,Manhattan,ILI ED visits,2025-02-01,832
+2025-02-25,NYC,ILI ED visits,2025-02-01,6008
+2025-02-25,Queens,ILI ED visits,2025-02-01,1495
+2025-02-25,Staten Island,ILI ED visits,2025-02-01,174
+2025-02-25,Unknown,ILI ED visits,2025-02-01,211
+2025-02-25,San Antonio,Flu ED visits pct,2025-02-08,8.78
+2025-02-25,Dallas,Flu ED visits pct,2025-02-08,9.7
+2025-02-25,El Paso,Flu ED visits pct,2025-02-08,6.27
+2025-02-25,Houston,Flu ED visits pct,2025-02-08,5.26
+2025-02-25,Austin,Flu ED visits pct,2025-02-08,7.99
+2025-02-25,Bronx,ILI ED visits,2025-02-08,1382
+2025-02-25,Brooklyn,ILI ED visits,2025-02-08,1539
+2025-02-25,Manhattan,ILI ED visits,2025-02-08,782
+2025-02-25,NYC,ILI ED visits,2025-02-08,5350
+2025-02-25,Queens,ILI ED visits,2025-02-08,1371
+2025-02-25,Staten Island,ILI ED visits,2025-02-08,126
+2025-02-25,Unknown,ILI ED visits,2025-02-08,150
+2025-02-25,San Antonio,Flu ED visits pct,2025-02-15,5.42
+2025-02-25,Dallas,Flu ED visits pct,2025-02-15,5.43
+2025-02-25,El Paso,Flu ED visits pct,2025-02-15,4.91
+2025-02-25,Houston,Flu ED visits pct,2025-02-15,3.7
+2025-02-25,Austin,Flu ED visits pct,2025-02-15,4.31
+2025-02-25,Bronx,ILI ED visits,2025-02-15,1132
+2025-02-25,Brooklyn,ILI ED visits,2025-02-15,1284
+2025-02-25,Manhattan,ILI ED visits,2025-02-15,645
+2025-02-25,NYC,ILI ED visits,2025-02-15,4419
+2025-02-25,Queens,ILI ED visits,2025-02-15,1108
+2025-02-25,Staten Island,ILI ED visits,2025-02-15,107
+2025-02-25,Unknown,ILI ED visits,2025-02-15,143
+2025-02-25,Bronx,ILI ED visits,2025-02-22,892
+2025-02-25,Brooklyn,ILI ED visits,2025-02-22,1051
+2025-02-25,Manhattan,ILI ED visits,2025-02-22,486
+2025-02-25,NYC,ILI ED visits,2025-02-22,3621
+2025-02-25,Queens,ILI ED visits,2025-02-22,954
+2025-02-25,Staten Island,ILI ED visits,2025-02-22,116
+2025-02-25,Unknown,ILI ED visits,2025-02-22,122
