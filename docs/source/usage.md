@@ -91,6 +91,38 @@ print(pa_table.shape)
 # (1350, 2)
 ```
 
+## Custom directory partitioning
+
+By default, `connect_hub()` assumes that model output data is stored using a single `model_id` directory level whose names are parsed as strings, e.g.:
+
+```
+model-output/
+    model_id1/
+        <round_id1>-<model_id1>.csv
+        <round_id2>-<model_id1>.csv
+    model_id2/
+        <round_id1>-<model_id2>.csv
+```
+
+If a hub organizes its model output data differently, pass a `partitions` argument to `connect_hub()`: a dict mapping each directory partition column name to the pyarrow data type its directory names should be parsed as, in order from the outermost to the innermost directory level. This is the Python analogue of the R hubData package's `connect_hub()` `partitions` argument. The partition columns are added to the dataset schema, so they can be selected and filtered like any other column. Hive-style (`key=value`) directory segments are not supported.
+
+```python
+import pyarrow as pa
+from hubdata import connect_hub
+
+
+# a hub whose model output data is organized as model-output/<round_id>/<model_id>/*.csv
+hub_connection = connect_hub(hub_path, partitions={'round_id': pa.date32(), 'model_id': pa.string()})
+hub_connection.partitions
+# {'round_id': DataType(date32[day]), 'model_id': DataType(string)}
+```
+
+Pass an empty dict to disable directory partitioning entirely, for hubs that store model output files directly in the model output directory:
+
+```python
+hub_connection = connect_hub(hub_path, partitions={})
+```
+
 ## Working with a cloud-based hub
 
 This package supports connecting to cloud-based hubs (primarily AWS S3 for the hubverse) via pyarrow's [abstract filesystem interface](https://arrow.apache.org/docs/python/filesystems.html), which works with both local file systems and those on the cloud. Here's an example of accessing the cloud-enabled [example-complex-forecast-hub](https://github.com/hubverse-org/example-complex-forecast-hub)'s S3 bucket via the S3 URI `s3://example-complex-forecast-hub/`. For example, continuing the above Python session:
