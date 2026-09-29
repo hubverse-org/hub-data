@@ -11,6 +11,10 @@ from hubdata.create_hub_schema import create_hub_schema
 
 logger = structlog.get_logger()
 
+# default directory-style partitioning for model output data: a single `model_id` directory level, parsed as a string.
+# see: https://docs.hubverse.io/en/latest/user-guide/model-output.html
+_DEFAULT_PARTITIONS: dict[str, pa.DataType] = {'model_id': pa.string()}
+
 
 class HubConnection:
     """
@@ -19,6 +23,7 @@ class HubConnection:
 
     Instance variables:
     - hub_path: str pointing to a hub's root directory as passed to `connect_hub()`
+    - partitions: dict mapping directory partition column names to pyarrow data types, as passed to `connect_hub()`
     - schema: the pa.Schema for `HubConnection.get_dataset()`. created by the constructor via `create_hub_schema()`
     - admin: the hub's `admin.json` contents as a dict
     - tasks: "" `tasks.json` ""
@@ -26,9 +31,12 @@ class HubConnection:
     """
 
 
-    def __init__(self, hub_path: str | Path):
+    def __init__(self, hub_path: str | Path, partitions: dict[str, pa.DataType] | None = None):
         """
         :param hub_path: str or Path pointing to a hub's root directory as passed to `connect_hub()`
+        :param partitions: as passed to `connect_hub()`: a dict mapping directory partition column names to their
+            pyarrow data types. `None` (the default) uses `{'model_id': pa.string()}`; an empty dict disables
+            directory partitioning
         """
         # set self.hub_path and then get an arrow FileSystem for it, letting it decide the correct subclass based on
         # that arg, catching any errors. also set two internal instance variables used by HubConnection.get_dataset():
@@ -48,8 +56,10 @@ class HubConnection:
         except Exception as ex:
             raise RuntimeError(f'admin.json or tasks.json not found: {ex}')
 
-        # set schema
-        self.schema = create_hub_schema(self.tasks)
+        # set self.partitions and then self.schema. NB: create_hub_schema() expects partitions as a tuple of
+        # (column_name, data_type) tuples
+        self.partitions: dict[str, pa.DataType] = self._validate_partitions(partitions)
+        self.schema = create_hub_schema(self.tasks, partitions=tuple(self.partitions.items()))
 
         # set self.model_metadata_schema, first checking for model-metadata-schema.json existence. warn (not error) if
         # not found to be consistent with R hubData
@@ -70,6 +80,35 @@ class HubConnection:
         self.model_output_dir = model_output_dir
 
 
+    @staticmethod
+    def _validate_partitions(partitions: dict[str, pa.DataType] | None) -> dict[str, pa.DataType]:
+        """
+        __init()__ helper that validates the `partitions` arg, returning the default
+        `{'model_id': pa.string()}` when `None` was passed.
+
+        :param partitions: as passed to `connect_hub()`
+        :return: a dict mapping directory partition column names to pyarrow data types
+        :raise: TypeError if `partitions` is not a dict, a column name is not a str, or a data type is not a
+            pyarrow DataType
+        """
+        if partitions is None:
+            return dict(_DEFAULT_PARTITIONS)
+        if not isinstance(partitions, dict):
+            raise TypeError(
+                f'partitions must be a dict mapping column names to pyarrow data types, not '
+                f'{type(partitions).__name__!r}'
+            )
+        for column_name, data_type in partitions.items():
+            if not isinstance(column_name, str):
+                raise TypeError(f'partition column names must be strings, not {type(column_name).__name__!r}')
+            if not isinstance(data_type, pa.DataType):
+                raise TypeError(
+                    f'partition data types must be pyarrow DataTypes, not '
+                    f'{type(data_type).__name__!r} for column {column_name!r}'
+                )
+        return dict(partitions)
+
+
     def get_dataset(self, exclude_invalid_files: bool = False,
                     ignore_files: Iterable[str] = ('README', '.DS_Store')) -> ds.Dataset:
         """
@@ -84,12 +123,17 @@ class HubConnection:
             specifying them here.
         :return: a pyarrow.dataset.Dataset for my model_output_dir
         """
-        # create the dataset. NB: we are using dataset "directory partitioning" to automatically get the `model_id`
-        # column from directory names. regarding performance on S3-based datasets, we default `exclude_invalid_files` to
-        # False, which speeds up pyarrow's dataset processing, but opens the door to errors: "unsupported files may be
-        # present in the Dataset (resulting in an error at scan time)". we prevent this from happening by manually
-        # constructing and passing `ignore_prefixes` based on file extensions. this method accepts `ignore_files` to
-        # allow custom prefixes to ignore. it defaults to common ones for hubs
+        # create the dataset. NB: we are using pyarrow's "directory partitioning" (as described at
+        # https://docs.hubverse.io/en/latest/user-guide/model-output.html) to get partition columns (by default,
+        # `model_id`) from directory names. the partition columns and their data types come from self.partitions, which
+        # was set via connect_hub()'s `partitions` arg. directory names at each level are parsed to the declared data
+        # type. NB: Hive-style (`key=value`) directory segments are not supported.
+        #
+        # regarding performance on S3-based datasets, we default `exclude_invalid_files` to False, which speeds up
+        # pyarrow's dataset processing, but opens the door to errors: "unsupported files may be present in the Dataset
+        # (resulting in an error at scan time)". we prevent this from happening by manually constructing and passing
+        # `ignore_prefixes` based on file extensions. this method accepts `ignore_files` to allow custom prefixes to
+        # ignore. it defaults to common ones for hubs
 
         # NB: we force file_formats to .parquet if not a LocalFileSystem (e.g., an S3FileSystem). otherwise we use the
         # list from self.admin['file_format']
@@ -98,13 +142,20 @@ class HubConnection:
         model_out_files = self._list_model_out_files()  # model_output_dir, type='file'
         datasets = []
         file_format_to_ignore_files: dict[str, list[fs.FileInfo]] = {}  # for warning
+        # NB: the dict's item order determines the outermost-to-innermost directory level order
+        partitioning = ds.partitioning(pa.schema(list(self.partitions.items()))) if self.partitions else None
         for file_format in file_formats:
             _ignore_files = self._list_invalid_format_files(model_out_files, file_format, ignore_files)
             file_format_to_ignore_files[file_format] = _ignore_files
-            dataset = ds.dataset(self.model_output_dir, filesystem=self._filesystem, format=file_format,
-                                 schema=self.schema, partitioning=['model_id'],  # NB: hard-coded partitioning!
-                                 exclude_invalid_files=exclude_invalid_files,
-                                 ignore_prefixes=[file_info.base_name for file_info in _ignore_files])
+            dataset = ds.dataset(
+                self.model_output_dir,
+                filesystem=self._filesystem,
+                format=file_format,
+                schema=self.schema,
+                partitioning=partitioning,
+                exclude_invalid_files=exclude_invalid_files,
+                ignore_prefixes=[file_info.base_name for file_info in _ignore_files],
+            )
             datasets.append(dataset)
         datasets = [dataset for dataset in datasets if len(dataset.files) != 0]
         self._warn_unopened_files(model_out_files, ignore_files, file_format_to_ignore_files)
@@ -172,7 +223,7 @@ class HubConnection:
         return self.get_dataset().to_table(*args, **kwargs)
 
 
-def connect_hub(hub_path: str | Path) -> HubConnection:
+def connect_hub(hub_path: str | Path, partitions: dict[str, pa.DataType] | None = None) -> HubConnection:
     """
     The main entry point for connecting to a hub, providing access to the instance variables documented in
     `HubConnection`, including admin.json and tasks.json as dicts. It also allows connecting to data in the hub's model
@@ -186,7 +237,17 @@ def connect_hub(hub_path: str | Path) -> HubConnection:
         From that page: Recognized URI schemes are “file”, “mock”, “s3fs”, “gs”, “gcs”, “hdfs” and “viewfs”. In
         addition, the argument can be a local path, either a pathlib.Path object or a str. NB: Passing a local path as a
         str requires an ABSOLUTE path, but passing the hub as a Path can be a relative path.
+    :param partitions: a dict mapping directory partition column names to their pyarrow data types, applied in order
+        from the outermost to the innermost directory level of the hub's model output directory (i.e., directory-style
+        partitioning as described at https://docs.hubverse.io/en/latest/user-guide/model-output.html). This is the
+        Python analogue of the R hubData package's `connect_hub()` `partitions` argument. Defaults to
+        `{'model_id': pa.string()}`. Pass an empty dict to disable directory partitioning (for hubs that store model
+        output files directly in the model output directory). NB: the partition columns are added to the dataset
+        schema, and directory names at each level are parsed to the declared data type. If a partition column name
+        matches a column from the hub's tasks.json, the partition's data type takes precedence. Hive-style
+        (`key=value`) directory segments are not supported.
     :return: a HubConnection
     :raise: RuntimeError if `hub_path` is invalid
+    :raise: TypeError if `partitions` is not a dict of str to pyarrow DataType
     """
-    return HubConnection(hub_path)
+    return HubConnection(hub_path, partitions=partitions)

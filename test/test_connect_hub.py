@@ -166,6 +166,112 @@ def test_query_data():
     assert hub_ds.count_rows() == 31  # only one row matches per file
 
 
+def test_connect_hub_partitions_default():
+    # partitions not passed -> defaults to {'model_id': pa.string()} (the previous hard-coded behavior)
+    hub_connection = connect_hub(Path('test/hubs/flu-metrocast'))
+    assert hub_connection.partitions == {'model_id': pa.string()}
+    assert hub_connection.schema.field('model_id').type == pa.string()
+    hub_ds = hub_connection.get_dataset()
+    table = hub_ds.to_table()
+    assert table.schema.field('model_id').type == pa.string()
+    assert sorted(pc.unique(table['model_id']).to_pylist()) == ['epiENGAGE-baseline', 'epiENGAGE-ensemble_mean']
+
+
+def _build_directory_partitioned_hub(tmp_path: Path) -> None:
+    """
+    builds a minimal hub at tmp_path using flu-metrocast's hub-config, with model output data stored using two-level
+    directory-style partitioning: model-output/<round_id>/<model_id>/*.csv
+    """
+    shutil.copytree('test/hubs/flu-metrocast/hub-config', tmp_path / 'hub-config')
+    csv_rows = {
+        ('2025-01-25', 'epiENGAGE-baseline'): [
+            '2025-01-25,ILI ED visits,0,Bronx,2025-01-25,quantile,0.5,100.0',
+            '2025-01-25,ILI ED visits,1,Queens,2025-02-01,quantile,0.5,200.0',
+        ],
+        ('2025-02-01', 'epiENGAGE-ensemble_mean'): [
+            '2025-02-01,Flu ED visits pct,0,Bronx,2025-02-01,quantile,0.25,50.0',
+        ],
+    }
+    for (round_id, model_id), rows in csv_rows.items():
+        partition_dir = tmp_path / 'model-output' / round_id / model_id
+        partition_dir.mkdir(parents=True, exist_ok=True)
+        with open(partition_dir / f'{round_id}-{model_id}.csv', 'w') as csv_fp:
+            csv_fp.write('reference_date,target,horizon,location,target_end_date,output_type,output_type_id,value\n')
+            csv_fp.write('\n'.join(rows) + '\n')
+
+
+def test_connect_hub_partitions_custom(tmp_path):
+    # case: two-level directory partitioning with declared data types, including a non-string (date32) partition
+    _build_directory_partitioned_hub(tmp_path)
+    partitions = {'round_id': pa.date32(), 'model_id': pa.string()}
+    hub_connection = connect_hub(tmp_path, partitions=partitions)
+    assert hub_connection.partitions == partitions
+
+    # the connection's schema matches create_hub_schema() called with the same partitions
+    assert hub_connection.schema == create_hub_schema(
+        hub_connection.tasks, partitions=(('round_id', pa.date32()), ('model_id', pa.string()))
+    )
+
+    hub_ds = hub_connection.get_dataset()
+    table = hub_ds.to_table()
+    assert sorted(table.column_names) == [
+        'horizon',
+        'location',
+        'model_id',
+        'output_type',
+        'output_type_id',
+        'reference_date',
+        'round_id',
+        'target',
+        'target_end_date',
+        'value',
+    ]
+    assert table.num_rows == 3
+
+    # partition columns have the declared data types and the expected values parsed from directory names
+    assert table.schema.field('round_id').type == pa.date32()
+    assert sorted(pc.unique(table['round_id']).to_pylist()) == [datetime.date(2025, 1, 25), datetime.date(2025, 2, 1)]
+    assert table.schema.field('model_id').type == pa.string()
+    assert sorted(pc.unique(table['model_id']).to_pylist()) == ['epiENGAGE-baseline', 'epiENGAGE-ensemble_mean']
+
+    # filtering on a partition column works
+    filtered_table = hub_ds.to_table(filter=pc.field('round_id') == datetime.date(2025, 1, 25))
+    assert filtered_table.num_rows == 2
+    assert sorted(pc.unique(filtered_table['model_id']).to_pylist()) == ['epiENGAGE-baseline']
+
+
+def test_connect_hub_partitions_disabled(tmp_path):
+    # case: empty dict disables directory partitioning (for hubs with model output files directly in the dir)
+    shutil.copytree('test/hubs/flu-metrocast/hub-config', tmp_path / 'hub-config')
+    model_output_dir = tmp_path / 'model-output'
+    model_output_dir.mkdir()
+    with open(model_output_dir / '2025-01-25-team1-goodmodel.csv', 'w') as csv_fp:
+        csv_fp.write('reference_date,target,horizon,location,target_end_date,output_type,output_type_id,value\n'
+                     '2025-01-25,ILI ED visits,0,Bronx,2025-01-25,quantile,0.5,100.0\n')
+
+    hub_connection = connect_hub(tmp_path, partitions={})
+    assert hub_connection.partitions == {}
+    assert 'model_id' not in hub_connection.schema.names
+    assert 'round_id' not in hub_connection.schema.names
+
+    table = hub_connection.get_dataset().to_table()
+    assert 'model_id' not in table.column_names
+    assert table.num_rows == 1
+
+
+@pytest.mark.parametrize(
+    'bad_partitions',
+    [
+        ['model_id'],  # not a dict
+        {'model_id': 'string'},  # data type is not a pyarrow DataType
+        {1: pa.string()},  # column name is not a str
+    ],
+)
+def test_connect_hub_partitions_invalid(bad_partitions):
+    with pytest.raises(TypeError):
+        connect_hub(Path('test/hubs/flu-metrocast'), partitions=bad_partitions)
+
+
 def test_to_table():
     hub_connection = connect_hub(Path('test/hubs/v4_flusight'))
     hub_ds = hub_connection.get_dataset()

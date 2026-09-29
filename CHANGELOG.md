@@ -4,6 +4,10 @@ All notable changes to `hubdata` are documented here.
 
 ## Unreleased
 
+### Added
+
+- Added support for user-specified directory-style partitioning of model output data via a new `partitions` argument to `connect_hub()` (the Python analogue of the R hubData package's `connect_hub()` `partitions` argument). Pass a dict mapping directory partition column names to their pyarrow data types, applied in order from the outermost to the innermost directory level (e.g., `partitions={'round_id': pa.date32(), 'model_id': pa.string()}`). The default (`{'model_id': pa.string()}`) preserves the previous behavior; pass an empty dict to disable directory partitioning. Also fixed the `partitions` type annotations in `create_hub_schema()` to accept any number of partitions.
+
 ## 0.2.0
 
 ### Added
