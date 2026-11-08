@@ -1,0 +1,13 @@
+# hub-data
+
+> Python tools for accessing and working with hubverse Hub data
+
+## Core Resources
+
+- [GitHub Repository](https://github.com/hubverse-org/hub-data): Source code, documentation, and issue tracker.
+- [Website](https://hubverse-org.github.io/hub-data/): Official website and documentation.
+
+## AI Agent & LLM Indexing
+
+- Structured following the standard /llms.txt specification for AI search engines and coding assistants.
+- Validated via [AccessGuard AI-Readiness Suite](https://ronanchnlps-bit.github.io/).
